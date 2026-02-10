@@ -1,0 +1,15 @@
+**/.git
+**/.gitignore
+**/.vs
+**/bin
+**/obj
+**/.vscode
+**/.idea
+**/node_modules
+**/coverage
+**/*.md
+**/LICENSE
+**/*.ps1
+**/*.sh
+**/Dockerfile
+**/.dockerignore

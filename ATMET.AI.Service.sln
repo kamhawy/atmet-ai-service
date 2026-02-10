@@ -1,0 +1,42 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.3.11505.172 d18.3
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{B5A8F7A1-1234-4567-89AB-CDEF01234567}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{528F339D-CAE8-4F6B-823A-B62C0C2CDB85}"
+	ProjectSection(SolutionItems) = preProject
+		ARCHITECTURE.md = ARCHITECTURE.md
+		DEPLOYMENT.md = DEPLOYMENT.md
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATMET.AI.Api", "src\ATMET.AI.Api\ATMET.AI.Api.csproj", "{5FA7AF4D-67D0-4B16-B7D1-6A9707EDF2E0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATMET.AI.Core", "src\ATMET.AI.Core\ATMET.AI.Core.csproj", "{204FBCF1-0F07-4468-9709-EBCC970A870D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ATMET.AI.Infrastructure", "src\ATMET.AI.Infrastructure\ATMET.AI.Infrastructure.csproj", "{13FBC73B-641C-4122-99BF-362DE86F4CAE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5FA7AF4D-67D0-4B16-B7D1-6A9707EDF2E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5FA7AF4D-67D0-4B16-B7D1-6A9707EDF2E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5FA7AF4D-67D0-4B16-B7D1-6A9707EDF2E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5FA7AF4D-67D0-4B16-B7D1-6A9707EDF2E0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{204FBCF1-0F07-4468-9709-EBCC970A870D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{204FBCF1-0F07-4468-9709-EBCC970A870D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{204FBCF1-0F07-4468-9709-EBCC970A870D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{204FBCF1-0F07-4468-9709-EBCC970A870D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{13FBC73B-641C-4122-99BF-362DE86F4CAE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{13FBC73B-641C-4122-99BF-362DE86F4CAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{13FBC73B-641C-4122-99BF-362DE86F4CAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{13FBC73B-641C-4122-99BF-362DE86F4CAE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
