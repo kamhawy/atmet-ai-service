@@ -47,6 +47,7 @@ POST /agents
 ```
 
 **Request Body:**
+
 ```json
 {
   "model": "gpt-4o",
@@ -68,6 +69,7 @@ POST /agents
 ```
 
 **Response:** `201 Created`
+
 ```json
 {
   "id": "agent_abc123",
@@ -91,10 +93,12 @@ GET /agents?limit=20&order=desc
 ```
 
 **Query Parameters:**
+
 - `limit` (optional): Maximum number of results (default: 20)
 - `order` (optional): Sort order - `asc` or `desc` (default: desc)
 
 **Response:** `200 OK`
+
 ```json
 [
   {
@@ -117,6 +121,7 @@ GET /agents/{agentId}
 ```
 
 **Response:** `200 OK`
+
 ```json
 {
   "id": "agent_abc123",
@@ -137,6 +142,7 @@ PUT /agents/{agentId}
 ```
 
 **Request Body:**
+
 ```json
 {
   "name": "Updated Agent Name",
@@ -165,6 +171,7 @@ POST /agents/{agentId}/threads
 ```
 
 **Request Body (optional):**
+
 ```json
 {
   "metadata": {
@@ -175,6 +182,7 @@ POST /agents/{agentId}/threads
 ```
 
 **Response:** `201 Created`
+
 ```json
 {
   "id": "thread_xyz789",
@@ -194,6 +202,7 @@ POST /threads/{threadId}/messages
 ```
 
 **Request Body:**
+
 ```json
 {
   "role": "user",
@@ -203,6 +212,7 @@ POST /threads/{threadId}/messages
 ```
 
 **Response:** `201 Created`
+
 ```json
 {
   "id": "msg_001",
@@ -233,6 +243,7 @@ POST /threads/{threadId}/runs
 ```
 
 **Request Body:**
+
 ```json
 {
   "agentId": "agent_abc123",
@@ -244,6 +255,7 @@ POST /threads/{threadId}/runs
 ```
 
 **Response:** `201 Created`
+
 ```json
 {
   "id": "run_123",
@@ -257,6 +269,7 @@ POST /threads/{threadId}/runs
 ```
 
 **Run Status Values:**
+
 - `queued` - Run is waiting to be processed
 - `in_progress` - Run is currently executing
 - `requires_action` - Run requires user action (function calling)
@@ -295,10 +308,12 @@ GET /deployments?modelPublisher=OpenAI&modelType=chat
 ```
 
 **Query Parameters:**
+
 - `modelPublisher` (optional): Filter by publisher
 - `modelType` (optional): Filter by model type
 
 **Response:** `200 OK`
+
 ```json
 [
   {
@@ -327,6 +342,7 @@ GET /deployments/{deploymentName}
 ```
 
 **Response:** `200 OK`
+
 ```json
 {
   "name": "gpt-4o",
@@ -348,10 +364,12 @@ GET /connections?connectionType=AzureOpenAI&includeCredentials=false
 ```
 
 **Query Parameters:**
+
 - `connectionType` (optional): Filter by type (AzureOpenAI, AzureAISearch, etc.)
 - `includeCredentials` (optional): Include connection credentials (default: false)
 
 **Response:** `200 OK`
+
 ```json
 [
   {
@@ -375,6 +393,7 @@ GET /connections/{connectionName}?includeCredentials=true
 ```
 
 **Response:** `200 OK`
+
 ```json
 {
   "name": "my-openai-connection",
@@ -408,12 +427,14 @@ Content-Type: multipart/form-data
 ```
 
 **Form Data:**
+
 - `name`: Dataset name
 - `version`: Dataset version (e.g., "1.0")
 - `connectionName`: Storage connection name
 - `file`: File to upload
 
 **Response:** `201 Created`
+
 ```json
 {
   "id": "dataset_123",
@@ -434,6 +455,7 @@ Content-Type: multipart/form-data
 ```
 
 **Form Data:**
+
 - `name`: Dataset name
 - `version`: Dataset version
 - `connectionName`: Storage connection name
@@ -483,6 +505,7 @@ POST /indexes
 ```
 
 **Request Body:**
+
 ```json
 {
   "name": "product-search",
@@ -494,6 +517,7 @@ POST /indexes
 ```
 
 **Response:** `201 Created`
+
 ```json
 {
   "id": "index_123",
@@ -547,6 +571,7 @@ POST /chat/completions
 ```
 
 **Request Body:**
+
 ```json
 {
   "model": "gpt-4o",
@@ -566,6 +591,7 @@ POST /chat/completions
 ```
 
 **Response:** `200 OK`
+
 ```json
 {
   "id": "chatcmpl_123",
@@ -599,6 +625,7 @@ POST /chat/completions/stream
 **Request Body:** Same as Create Completion
 
 **Response:** `200 OK`
+
 ```
 Content-Type: text/event-stream
 
@@ -622,6 +649,7 @@ GET /health
 ```
 
 **Response:** `200 OK`
+
 ```json
 {
   "status": "Healthy",
@@ -657,10 +685,12 @@ GET /health/live
 ## Rate Limiting
 
 API enforces rate limits:
+
 - **Per User**: 100 requests per minute
 - **Streaming**: 10 concurrent streams per user
 
 Rate limit headers:
+
 ```http
 X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 95
