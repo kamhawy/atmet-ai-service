@@ -211,12 +211,12 @@ public class DatasetService : IDatasetService
 
             var credentials = _projectClient.Datasets.GetCredentials(name, version);
 
-            // NOTE: DatasetCredential property names — verify against SDK at build time.
-            // The Azure AI Foundry REST API returns { sasUri, expirationDateTime }.
-            // The SDK type mirrors this with SasUri (Uri?) and ExpirationDateTime (DateTimeOffset?).
+            // DatasetCredential has BlobReference (AIProjectBlobReference); no ExpirationDateTime in SDK 1.1.0.
+            var blobRef = credentials.Value.BlobReference;
+            var sasUri = blobRef?.Credential?.SasUri?.ToString() ?? string.Empty;
             return Task.FromResult(new DatasetCredentialsResponse(
-                SasUri: credentials.Value.BlobReference.BlobUri?.ToString() ?? string.Empty,
-                ExpiresAt: credentials.Value.ExpirationDateTime ?? DateTimeOffset.UtcNow.AddHours(1)
+                SasUri: sasUri,
+                ExpiresAt: DateTimeOffset.UtcNow.AddHours(1)
             ));
         }
         catch (Azure.RequestFailedException ex) when (ex.Status == 404)

@@ -94,8 +94,8 @@ public class AgentService : IAgentService
             _logger.LogInformation("Getting agent: {AgentId}", agentId);
 
             var agent = await _agentsClient.Administration.GetAgentAsync(
-                agentId: agentId,
-                cancellationToken: cancellationToken);
+                assistantId: agentId,
+                cancellationToken);
 
             if (agent?.Value == null)
                 throw new NotFoundException($"Agent with ID '{agentId}' not found");
@@ -120,17 +120,25 @@ public class AgentService : IAgentService
             _logger.LogInformation("Updating agent: {AgentId}", agentId);
 
             var existingAgent = await _agentsClient.Administration.GetAgentAsync(
-                agentId: agentId,
-                cancellationToken: cancellationToken);
+                assistantId: agentId,
+                cancellationToken);
 
             if (existingAgent?.Value == null)
                 throw new NotFoundException($"Agent with ID '{agentId}' not found");
 
             var updatedAgent = await _agentsClient.Administration.UpdateAgentAsync(
-                agentId: agentId,
+                assistantId: agentId,
+                model: existingAgent.Value.Model,
                 name: request.Name ?? existingAgent.Value.Name,
+                description: null,
                 instructions: request.Instructions ?? existingAgent.Value.Instructions,
-                cancellationToken: cancellationToken);
+                tools: null,
+                toolResources: null,
+                temperature: null,
+                topP: null,
+                responseFormat: null,
+                metadata: null,
+                cancellationToken);
 
             _logger.LogInformation("Successfully updated agent: {AgentId}", agentId);
             return MapToAgentResponse(updatedAgent.Value);
@@ -391,10 +399,25 @@ public class AgentService : IAgentService
                 threadId, request.AgentId);
 
             var run = await _agentsClient.Runs.CreateRunAsync(
-                threadId: threadId,
-                agentId: request.AgentId,
+                threadId,
+                request.AgentId,
+                overrideModelName: null,
+                overrideInstructions: null,
                 additionalInstructions: request.Instructions,
-                cancellationToken: cancellationToken);
+                additionalMessages: null,
+                overrideTools: null,
+                stream: null,
+                temperature: null,
+                topP: null,
+                maxPromptTokens: null,
+                maxCompletionTokens: null,
+                truncationStrategy: null,
+                toolChoice: null,
+                responseFormat: null,
+                parallelToolCalls: null,
+                metadata: null,
+                include: null,
+                cancellationToken);
 
             _logger.LogInformation("Successfully created run: {RunId}", run.Value.Id);
             return MapToRunResponse(run.Value, threadId, request.AgentId);
@@ -421,7 +444,7 @@ public class AgentService : IAgentService
             if (run?.Value == null)
                 throw new NotFoundException($"Run with ID '{runId}' not found in thread '{threadId}'");
 
-            return MapToRunResponse(run.Value, threadId, run.Value.AgentId);
+            return MapToRunResponse(run.Value, threadId, run.Value.AssistantId ?? string.Empty);
         }
         catch (NotFoundException) { throw; }
         catch (Exception ex)
@@ -446,7 +469,7 @@ public class AgentService : IAgentService
                 cancellationToken: cancellationToken);
 
             _logger.LogInformation("Successfully cancelled run: {RunId}", runId);
-            return MapToRunResponse(run.Value, threadId, run.Value.AgentId);
+            return MapToRunResponse(run.Value, threadId, run.Value.AssistantId ?? string.Empty);
         }
         catch (Exception ex)
         {
@@ -477,7 +500,7 @@ public class AgentService : IAgentService
 
             await foreach (var run in runPages)
             {
-                runs.Add(MapToRunResponse(run, threadId, run.AgentId));
+                runs.Add(MapToRunResponse(run, threadId, run.AssistantId ?? string.Empty));
 
                 if (limit.HasValue && runs.Count >= limit.Value)
                     break;
@@ -509,17 +532,17 @@ public class AgentService : IAgentService
             _logger.LogInformation("Uploading file: {FileName}", fileName);
 
             var file = await _agentsClient.Files.UploadFileAsync(
-                data: BinaryData.FromStream(fileStream),
-                filename: fileName,
-                purpose: AgentFilePurpose.Agents,
-                cancellationToken: cancellationToken);
+                fileStream,
+                PersistentAgentFilePurpose.Agents,
+                fileName,
+                cancellationToken);
 
             _logger.LogInformation("Successfully uploaded file: {FileId}", file.Value.Id);
 
             return new FileResponse(
                 Id: file.Value.Id,
                 Filename: file.Value.Filename,
-                Bytes: file.Value.Bytes,
+                Bytes: file.Value.Size,
                 CreatedAt: file.Value.CreatedAt
             );
         }
@@ -548,7 +571,7 @@ public class AgentService : IAgentService
             return new FileResponse(
                 Id: file.Value.Id,
                 Filename: file.Value.Filename,
-                Bytes: file.Value.Bytes,
+                Bytes: file.Value.Size,
                 CreatedAt: file.Value.CreatedAt
             );
         }

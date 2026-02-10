@@ -19,8 +19,7 @@ public static class ChatEndpoints
     public static void MapEndpoints(RouteGroupBuilder group)
     {
         var chat = group.MapGroup("/chat")
-            .WithTags("Chat")
-            .WithOpenApi();
+            .WithTags("Chat");
 
         chat.MapPost("/completions", CreateCompletion)
             .WithName("CreateChatCompletion")
@@ -49,7 +48,7 @@ public static class ChatEndpoints
     private static async Task CreateStreamingCompletion(
         [FromBody] ChatCompletionRequest request,
         [FromServices] IChatService chatService,
-        [FromServices] ILogger<Program> logger,
+        [FromServices] ILoggerFactory loggerFactory,
         HttpContext context,
         CancellationToken cancellationToken)
     {
@@ -58,6 +57,7 @@ public static class ChatEndpoints
         context.Response.Headers.Append("Connection", "keep-alive");
         context.Response.Headers.Append("X-Accel-Buffering", "no"); // Disable proxy buffering
 
+        var logger = loggerFactory.CreateLogger("ATMET.AI.Api.Endpoints.Chat");
         try
         {
             await foreach (var chunk in chatService.CreateStreamingCompletionAsync(request, cancellationToken))

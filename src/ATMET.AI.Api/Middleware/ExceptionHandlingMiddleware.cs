@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Azure;
 using ATMET.AI.Core.Exceptions;
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ATMET.AI.Api.Middleware;
@@ -46,10 +47,15 @@ public class ExceptionHandlingMiddleware
 
         var (statusCode, title, detail) = exception switch
         {
-            ValidationException validationEx => (
+            ATMET.AI.Core.Exceptions.ValidationException validationEx => (
                 HttpStatusCode.BadRequest,
                 "Validation Error",
                 validationEx.Message
+            ),
+            FluentValidation.ValidationException fluentEx => (
+                HttpStatusCode.BadRequest,
+                "Validation Error",
+                fluentEx.Message
             ),
             NotFoundException notFoundEx => (
                 HttpStatusCode.NotFound,
@@ -83,6 +89,13 @@ public class ExceptionHandlingMiddleware
                 ["timestamp"] = DateTimeOffset.UtcNow
             }
         };
+
+        if (exception is FluentValidation.ValidationException fluentValidationEx)
+        {
+            problemDetails.Extensions["errors"] = fluentValidationEx.Errors
+                .GroupBy(e => e.PropertyName)
+                .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
+        }
 
         // Add stack trace in development
         if (_environment.IsDevelopment() && exception.StackTrace is not null)

@@ -11,22 +11,25 @@ public static class ConnectionsEndpoints
     public static void MapEndpoints(RouteGroupBuilder group)
     {
         var connections = group.MapGroup("/connections")
-            .WithTags("Connections")
-            .WithOpenApi();
+            .WithTags("Connections");
 
         // IMPORTANT: Register literal "/default" BEFORE parameterized "/{connectionName}"
         // to avoid route shadowing
         connections.MapGet("/default", GetDefaultConnection)
             .WithName("GetDefaultConnection")
-            .WithSummary("Get the default project connection");
+            .WithSummary("Get the default project connection")
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         connections.MapGet("/", ListConnections)
             .WithName("ListConnections")
-            .WithSummary("List all Azure resource connections");
+            .WithSummary("List all Azure resource connections")
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         connections.MapGet("/{connectionName}", GetConnection)
             .WithName("GetConnection")
-            .WithSummary("Get connection details by name");
+            .WithSummary("Get connection details by name")
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
     }
 
     private static async Task<IResult> ListConnections(

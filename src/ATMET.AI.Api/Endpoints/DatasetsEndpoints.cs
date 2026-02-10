@@ -12,8 +12,7 @@ public static class DatasetsEndpoints
     public static void MapEndpoints(RouteGroupBuilder group)
     {
         var datasets = group.MapGroup("/datasets")
-            .WithTags("Datasets")
-            .WithOpenApi();
+            .WithTags("Datasets");
 
         datasets.MapPost("/upload/file", UploadFile)
             .WithName("UploadDatasetFile")

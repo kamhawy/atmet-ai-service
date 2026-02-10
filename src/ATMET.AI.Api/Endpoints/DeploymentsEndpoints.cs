@@ -11,16 +11,18 @@ public static class DeploymentsEndpoints
     public static void MapEndpoints(RouteGroupBuilder group)
     {
         var deployments = group.MapGroup("/deployments")
-            .WithTags("Deployments")
-            .WithOpenApi();
+            .WithTags("Deployments");
 
         deployments.MapGet("/", ListDeployments)
             .WithName("ListDeployments")
-            .WithSummary("List all AI model deployments");
+            .WithSummary("List all AI model deployments")
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         deployments.MapGet("/{deploymentName}", GetDeployment)
             .WithName("GetDeployment")
-            .WithSummary("Get deployment details by name");
+            .WithSummary("Get deployment details by name")
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
     }
 
     private static async Task<IResult> ListDeployments(

@@ -119,18 +119,18 @@ public class ChatService : IChatService
 
         await foreach (var update in stream.WithCancellation(cancellationToken))
         {
-            // Each update may contain one or more content parts
+            // Each update may contain one or more content parts (Azure.AI.OpenAI: Id renamed to CompletionId)
             var deltaContent = update.ContentUpdate
                 .Select(c => c.Text)
                 .Where(t => t != null)
                 .Aggregate(string.Empty, (acc, t) => acc + t);
 
             yield return new ChatCompletionChunk(
-                Id: update.Id ?? string.Empty,
+                Id: update.CompletionId ?? string.Empty,
                 Choices: new List<ChatChoiceDelta>
                 {
                     new(
-                        Index: update.ChoiceIndex,
+                        Index: 0,
                         Content: string.IsNullOrEmpty(deltaContent) ? null : deltaContent,
                         FinishReason: update.FinishReason?.ToString()
                     )

@@ -13,8 +13,7 @@ public static class AgentsEndpoints
     public static void MapEndpoints(RouteGroupBuilder group)
     {
         var agents = group.MapGroup("/agents")
-            .WithTags("Agents")
-            .WithOpenApi();
+            .WithTags("Agents");
 
         // ====================================================================
         // Agent Management

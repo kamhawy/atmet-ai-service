@@ -13,8 +13,7 @@ public static class IndexesEndpoints
     public static void MapEndpoints(RouteGroupBuilder group)
     {
         var indexes = group.MapGroup("/indexes")
-            .WithTags("Indexes")
-            .WithOpenApi();
+            .WithTags("Indexes");
 
         indexes.MapPost("/", CreateOrUpdateIndex)
             .WithName("CreateOrUpdateIndex")

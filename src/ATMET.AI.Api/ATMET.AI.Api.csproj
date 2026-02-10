@@ -17,9 +17,10 @@
     
     <!-- ASP.NET Core Packages -->
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.1.0" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.4.1" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.9.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.3" />
-    <PackageReference Include="Microsoft.Identity.Web" Version="4.3.0" />
     
     <!-- Observability -->
     <PackageReference Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.4.0" />

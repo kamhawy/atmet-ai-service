@@ -42,11 +42,12 @@ public class DeploymentService : IDeploymentService
 
             await foreach (var deployment in deploymentPages)
             {
+                var modelDeployment = deployment as ModelDeployment;
                 deployments.Add(new DeploymentResponse(
-                    Name: deployment.Name,
-                    Model: deployment.Model?.Name ?? "Unknown",
-                    Publisher: deployment.Model?.Publisher ?? "Unknown",
-                    Type: deployment.Model?.Type ?? "Unknown",
+                    Name: deployment.Name ?? "Unknown",
+                    Model: modelDeployment?.ModelName ?? deployment.Name ?? "Unknown",
+                    Publisher: modelDeployment?.ModelPublisher ?? "Unknown",
+                    Type: "ModelDeployment",
                     Status: "Active"
                 ));
             }
@@ -70,17 +71,19 @@ public class DeploymentService : IDeploymentService
             _logger.LogInformation("Getting deployment: {DeploymentName}", deploymentName);
 
             var deployment = await _projectClient.Deployments.GetDeploymentAsync(
-                name: deploymentName,
-                cancellationToken: cancellationToken);
+                deploymentName,
+                cancellationToken);
 
             if (deployment?.Value == null)
                 throw new NotFoundException($"Deployment '{deploymentName}' not found");
 
+            var value = deployment.Value;
+            var modelDeployment = value as ModelDeployment;
             return new DeploymentResponse(
-                Name: deployment.Value.Name,
-                Model: deployment.Value.Model?.Name ?? "Unknown",
-                Publisher: deployment.Value.Model?.Publisher ?? "Unknown",
-                Type: deployment.Value.Model?.Type ?? "Unknown",
+                Name: value.Name ?? "Unknown",
+                Model: modelDeployment?.ModelName ?? value.Name ?? "Unknown",
+                Publisher: modelDeployment?.ModelPublisher ?? "Unknown",
+                Type: "ModelDeployment",
                 Status: "Active"
             );
         }
