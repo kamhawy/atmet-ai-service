@@ -510,6 +510,28 @@ az group delete \
 
 ## 📝 Troubleshooting
 
+### Issue: ManagedIdentityCredential – "No User Assigned or Delegated Managed Identity found for specified ClientId/ResourceId/PrincipalId"
+
+**Cause**: The app is configured with `AzureAI:ManagedIdentityClientId` set to a value (e.g. a GUID). That tells the app to use a **User-Assigned** Managed Identity with that Client ID. The error means the Web App either has no User-Assigned identity, or the configured Client ID does not match any identity attached to the app.
+
+**Solution (choose one):**
+
+1. **Use System-Assigned Managed Identity (simplest)**  
+   - In Azure Portal: **App Service** → **Identity** → ensure **System assigned** is **On**.  
+   - In **Configuration** → **Application settings**, either:
+     - **Remove** the `AzureAI__ManagedIdentityClientId` setting, or  
+     - Set `AzureAI__ManagedIdentityClientId` to an **empty** value.  
+   - When this setting is missing or empty, the app uses `DefaultAzureCredential`, which uses the app’s **System-Assigned** identity in Azure.  
+   - Ensure the **System-Assigned** identity has the right roles (e.g. **Cognitive Services User**) on your Azure AI resource.
+
+2. **Use User-Assigned Managed Identity**  
+   - Create a User-Assigned Managed Identity and **assign it to the Web App** (Identity → User assigned → Add).  
+   - Grant that identity the required roles on the Azure AI resource.  
+   - In **Configuration** → **Application settings**, set `AzureAI__ManagedIdentityClientId` to that identity’s **Client ID** (a GUID from the identity’s overview in Azure Portal, or from `az identity show ... --query clientId -o tsv`).  
+   - Do **not** use a random GUID or copy a value from elsewhere (e.g. API keys); it must be the actual Managed Identity Client ID.
+
+**Note**: If `appsettings.json` in the repo contains `ManagedIdentityClientId`, it is used unless overridden. Override it in App Service application settings (e.g. set `AzureAI__ManagedIdentityClientId=` to empty) so the deployed app uses System-Assigned MI when you are not using a User-Assigned identity.
+
 ### Issue: HTTP Error 400 - The request hostname is invalid
 
 **Cause**: ASP.NET Core's `AllowedHosts` setting only accepts **host names** (no `https://` or `http://`). The `Host` header sent by the client is just the hostname (e.g. `atmet-ai-service-dev-xxx.azurewebsites.net`). If `AllowedHosts` contains URLs with schemes, the host filter rejects the request and returns 400.
