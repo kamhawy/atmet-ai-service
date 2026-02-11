@@ -510,6 +510,20 @@ az group delete \
 
 ## 📝 Troubleshooting
 
+### Issue: HTTP Error 400 - The request hostname is invalid
+
+**Cause**: ASP.NET Core's `AllowedHosts` setting only accepts **host names** (no `https://` or `http://`). The `Host` header sent by the client is just the hostname (e.g. `atmet-ai-service-dev-xxx.azurewebsites.net`). If `AllowedHosts` contains URLs with schemes, the host filter rejects the request and returns 400.
+
+**Solution**:
+- In `appsettings.json`, set `AllowedHosts` to semicolon-separated host names only, for example:
+  - `atmetai-demo.lovable.app;atmet-ai-service-dev-hde2hcf2g3e3btf4.westeurope-01.azurewebsites.net;localhost;*.azurewebsites.net`
+- Do **not** include `https://` or `http://` in `AllowedHosts`.
+- Use the exact App Service URL from the Azure portal (e.g. `https://atmet-ai-service-dev-xxx.azurewebsites.net` in the browser, but only the hostname part in `AllowedHosts`).
+
+**Also check**:
+- You are opening the app using the correct URL (e.g. `https://<app-name>.azurewebsites.net`), not an IP or wrong hostname.
+- If you use a deployment slot, use that slot's hostname (e.g. `https://<app-name>-<slot-name>.azurewebsites.net` or the slot's custom URL).
+
 ### Issue: 403 Forbidden errors
 
 **Solution**: Verify managed identity has correct role assignments
