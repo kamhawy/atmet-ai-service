@@ -12,17 +12,21 @@ public static class HostBuilderExtensions
     /// </summary>
     public static IHostBuilder UseApiSerilog(this IHostBuilder host, IConfiguration configuration)
     {
-        Log.Logger = new LoggerConfiguration()
+        var loggerConfig = new LoggerConfiguration()
             .ReadFrom.Configuration(configuration)
             .Enrich.FromLogContext()
             .Enrich.WithProperty("Application", "ATMET.AI.Service")
             .Enrich.WithMachineName()
             .Enrich.WithThreadId()
-            .WriteTo.Console()
-            .WriteTo.ApplicationInsights(
-                configuration["ApplicationInsights:ConnectionString"],
-                TelemetryConverter.Traces)
-            .CreateLogger();
+            .WriteTo.Console();
+
+        var connectionString = configuration["ApplicationInsights:ConnectionString"];
+        if (!string.IsNullOrEmpty(connectionString))
+        {
+            loggerConfig.WriteTo.ApplicationInsights(connectionString, TelemetryConverter.Traces);
+        }
+
+        Log.Logger = loggerConfig.CreateLogger();
 
         host.UseSerilog();
         return host;
