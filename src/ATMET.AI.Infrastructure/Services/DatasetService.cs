@@ -2,6 +2,7 @@ using ATMET.AI.Core.Exceptions;
 using ATMET.AI.Core.Models.Responses;
 using ATMET.AI.Core.Services;
 using ATMET.AI.Infrastructure.Clients;
+using Azure;
 using Azure.AI.Projects;
 using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
@@ -62,7 +63,7 @@ public class DatasetService : IDatasetService
         }
         catch (Exception ex) when (ex is not NotFoundException)
         {
-            _logger.LogError(ex, "Failed to upload file dataset: {Name} v{Version}", name, version);
+            LogDatasetError(ex, "UploadFile", $"Name={name}, Version={version}, File={fileName}");
             throw;
         }
         finally
@@ -116,7 +117,7 @@ public class DatasetService : IDatasetService
         }
         catch (Exception ex) when (ex is not NotFoundException)
         {
-            _logger.LogError(ex, "Failed to upload folder dataset: {Name} v{Version}", name, version);
+            LogDatasetError(ex, "UploadFolder", $"Name={name}, Version={version}");
             throw;
         }
         finally
@@ -125,7 +126,7 @@ public class DatasetService : IDatasetService
         }
     }
 
-    public Task<List<DatasetResponse>> ListDatasetsAsync(
+    public async Task<List<DatasetResponse>> ListDatasetsAsync(
         CancellationToken cancellationToken = default)
     {
         try
@@ -134,17 +135,17 @@ public class DatasetService : IDatasetService
 
             var datasets = new List<DatasetResponse>();
 
-            foreach (var dataset in _projectClient.Datasets.GetDatasets())
+            await foreach (var dataset in _projectClient.Datasets.GetDatasetsAsync(cancellationToken))
             {
                 datasets.Add(MapToDatasetResponse(dataset));
             }
 
             _logger.LogInformation("Retrieved {Count} datasets", datasets.Count);
-            return Task.FromResult(datasets);
+            return datasets;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to list datasets");
+            LogDatasetError(ex, "ListDatasets");
             throw;
         }
     }
@@ -171,7 +172,7 @@ public class DatasetService : IDatasetService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to list dataset versions: {Name}", name);
+            LogDatasetError(ex, "ListDatasetVersions", $"Name={name}");
             throw;
         }
     }
@@ -189,13 +190,13 @@ public class DatasetService : IDatasetService
 
             return Task.FromResult(MapToDatasetResponse(dataset));
         }
-        catch (Azure.RequestFailedException ex) when (ex.Status == 404)
+        catch (RequestFailedException ex) when (ex.Status == 404)
         {
             throw new NotFoundException($"Dataset '{name}' version '{version}' not found");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to get dataset: {Name} v{Version}", name, version);
+            LogDatasetError(ex, "GetDataset", $"Name={name}, Version={version}");
             throw;
         }
     }
@@ -223,13 +224,13 @@ public class DatasetService : IDatasetService
                 CredentialType: sasCred?.Type
             ));
         }
-        catch (Azure.RequestFailedException ex) when (ex.Status == 404)
+        catch (RequestFailedException ex) when (ex.Status == 404)
         {
             throw new NotFoundException($"Dataset '{name}' version '{version}' not found");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to get dataset credentials: {Name} v{Version}", name, version);
+            LogDatasetError(ex, "GetCredentials", $"Name={name}, Version={version}");
             throw;
         }
     }
@@ -248,13 +249,13 @@ public class DatasetService : IDatasetService
             _logger.LogInformation("Successfully deleted dataset: {Name} v{Version}", name, version);
             return Task.CompletedTask;
         }
-        catch (Azure.RequestFailedException ex) when (ex.Status == 404)
+        catch (RequestFailedException ex) when (ex.Status == 404)
         {
             throw new NotFoundException($"Dataset '{name}' version '{version}' not found");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to delete dataset: {Name} v{Version}", name, version);
+            LogDatasetError(ex, "DeleteDataset", $"Name={name}, Version={version}");
             throw;
         }
     }
@@ -262,6 +263,23 @@ public class DatasetService : IDatasetService
     // ====================================================================
     // Private Helpers
     // ====================================================================
+
+    private void LogDatasetError(Exception ex, string operation, params string[] context)
+    {
+        var contextStr = context.Length > 0 ? string.Join(", ", context) : "(none)";
+        if (ex is RequestFailedException rfex)
+        {
+            _logger.LogError(ex,
+                "Dataset operation '{Operation}' failed. HTTP Status: {Status}, ErrorCode: {ErrorCode}, Message: {Message}. Context: {Context}",
+                operation, rfex.Status, rfex.ErrorCode ?? "(none)", rfex.Message, contextStr);
+        }
+        else
+        {
+            _logger.LogError(ex,
+                "Dataset operation '{Operation}' failed. Context: {Context}",
+                operation, contextStr);
+        }
+    }
 
     private static DatasetResponse MapToDatasetResponse(AIProjectDataset dataset, string? type = null)
     {
