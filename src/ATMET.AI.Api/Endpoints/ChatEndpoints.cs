@@ -24,6 +24,7 @@ public static class ChatEndpoints
         chat.MapPost("/completions", CreateCompletion)
             .WithName("CreateChatCompletion")
             .WithSummary("Create a chat completion")
+            .WithDescription("Sends messages to the model and returns a complete response. Model is optional (uses default from config). Supports temperature, maxTokens, topP, and stopSequences.")
             .Produces<ChatCompletionResponse>()
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status500InternalServerError);
@@ -31,6 +32,7 @@ public static class ChatEndpoints
         chat.MapPost("/completions/stream", CreateStreamingCompletion)
             .WithName("CreateStreamingChatCompletion")
             .WithSummary("Create a streaming chat completion (SSE)")
+            .WithDescription("Streams the completion using Server-Sent Events. Each chunk contains partial content. Use stream=true in the request body.")
             .Produces(StatusCodes.Status200OK, contentType: "text/event-stream")
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status500InternalServerError);

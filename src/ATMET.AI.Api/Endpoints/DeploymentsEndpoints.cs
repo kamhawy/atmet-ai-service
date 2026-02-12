@@ -1,3 +1,4 @@
+using ATMET.AI.Core.Models.Responses;
 using ATMET.AI.Core.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,11 +17,15 @@ public static class DeploymentsEndpoints
         deployments.MapGet("/", ListDeployments)
             .WithName("ListDeployments")
             .WithSummary("List all AI model deployments")
+            .WithDescription("Returns all model deployments (e.g., GPT-4, GPT-4o) available in the project. Optionally filter by publisher or type.")
+            .Produces<List<DeploymentResponse>>()
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         deployments.MapGet("/{deploymentName}", GetDeployment)
             .WithName("GetDeployment")
             .WithSummary("Get deployment details by name")
+            .WithDescription("Returns metadata for a specific model deployment including model name, publisher, capabilities, and SKU.")
+            .Produces<DeploymentResponse>()
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
     }

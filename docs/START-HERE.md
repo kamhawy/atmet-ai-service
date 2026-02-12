@@ -6,7 +6,7 @@ This package contains a **production-ready .NET 10 Web API** that encapsulates t
 
 ## 📦 Package Contents
 
-```
+```bash
 ATMET.AI.Service/
 ├── 📄 README.md                    - Main documentation
 ├── 📄 PROJECT-SUMMARY.md           - Quick start guide
@@ -52,7 +52,7 @@ Edit `src/ATMET.AI.Api/appsettings.Development.json`:
 }
 ```
 
-Get your endpoint from: https://ai.azure.com (your Azure AI Foundry project)
+Get your endpoint from: <https://ai.azure.com> (your Azure AI Foundry project)
 
 ### 3. Run the API
 
@@ -61,7 +61,7 @@ cd src/ATMET.AI.Api
 dotnet run
 ```
 
-Open: https://localhost:5001 (Swagger UI will load)
+Open: <https://localhost:5001> (Swagger UI will load)
 
 ## 🎯 Features Implemented
 
@@ -111,13 +111,13 @@ Open: https://localhost:5001 (Swagger UI will load)
 
 ## 📚 Documentation
 
-| Document | Purpose |
-|----------|---------|
-| **PROJECT-SUMMARY.md** | 🎯 Start here! Quick overview and examples |
-| **README.md** | 📖 Comprehensive guide with setup instructions |
-| **ARCHITECTURE.md** | 🏗️ System design and architecture details |
-| **API-REFERENCE.md** | 📑 Complete API endpoint documentation |
-| **DEPLOYMENT.md** | ☁️ Step-by-step Azure deployment guide |
+| Document               | Purpose                                       |
+| ---------------------- | --------------------------------------------- |
+| **PROJECT-SUMMARY.md** | 🎯 Start here! Quick overview and examples     |
+| **README.md**          | 📖 Comprehensive guide with setup instructions |
+| **ARCHITECTURE.md**    | 🏗️ System design and architecture details      |
+| **API-REFERENCE.md**   | 📑 Complete API endpoint documentation         |
+| **DEPLOYMENT.md**      | ☁️ Step-by-step Azure deployment guide         |
 
 ## 🔧 Next Steps for You
 
@@ -256,7 +256,7 @@ Full deployment guide in **DEPLOYMENT.md**
 - [ ] Update `appsettings.Development.json` with your Azure AI endpoint
 - [ ] Run `dotnet build` to restore packages
 - [ ] Run `dotnet run` in `src/ATMET.AI.Api`
-- [ ] Open https://localhost:5001 (Swagger UI)
+- [ ] Open <https://localhost:5001> (Swagger UI)
 - [ ] Test the `/health` endpoint
 - [ ] Read PROJECT-SUMMARY.md for quick start
 - [ ] Read DEPLOYMENT.md when ready to deploy

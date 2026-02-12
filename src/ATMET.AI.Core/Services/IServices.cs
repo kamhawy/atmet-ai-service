@@ -13,23 +13,23 @@ public interface IAgentService
     Task<AgentResponse> GetAgentAsync(string agentId, CancellationToken cancellationToken = default);
     Task<AgentResponse> UpdateAgentAsync(string agentId, UpdateAgentRequest request, CancellationToken cancellationToken = default);
     Task DeleteAgentAsync(string agentId, CancellationToken cancellationToken = default);
-    
+
     // Thread operations
     Task<ThreadResponse> CreateThreadAsync(string agentId, CreateThreadRequest? request = null, CancellationToken cancellationToken = default);
     Task<ThreadResponse> GetThreadAsync(string threadId, CancellationToken cancellationToken = default);
     Task DeleteThreadAsync(string threadId, CancellationToken cancellationToken = default);
-    
+
     // Message operations
     Task<MessageResponse> AddMessageAsync(string threadId, CreateMessageRequest request, CancellationToken cancellationToken = default);
     Task<List<MessageResponse>> GetMessagesAsync(string threadId, int? limit = null, string? order = null, CancellationToken cancellationToken = default);
     Task<MessageResponse> GetMessageAsync(string threadId, string messageId, CancellationToken cancellationToken = default);
-    
+
     // Run operations
     Task<RunResponse> CreateRunAsync(string threadId, CreateRunRequest request, CancellationToken cancellationToken = default);
     Task<RunResponse> GetRunAsync(string threadId, string runId, CancellationToken cancellationToken = default);
     Task<RunResponse> CancelRunAsync(string threadId, string runId, CancellationToken cancellationToken = default);
     Task<List<RunResponse>> ListRunsAsync(string threadId, int? limit = null, string? order = null, CancellationToken cancellationToken = default);
-    
+
     // File operations — use Stream to avoid ASP.NET dependency in Core layer
     Task<FileResponse> UploadFileAsync(Stream fileStream, string fileName, CancellationToken cancellationToken = default);
     Task<FileResponse> GetFileAsync(string fileId, CancellationToken cancellationToken = default);

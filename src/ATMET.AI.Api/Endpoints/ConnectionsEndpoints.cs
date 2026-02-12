@@ -1,3 +1,4 @@
+using ATMET.AI.Core.Models.Responses;
 using ATMET.AI.Core.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,16 +19,22 @@ public static class ConnectionsEndpoints
         connections.MapGet("/default", GetDefaultConnection)
             .WithName("GetDefaultConnection")
             .WithSummary("Get the default project connection")
+            .WithDescription("Returns the default Azure AI resource connection configured for the project.")
+            .Produces<ConnectionResponse>()
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         connections.MapGet("/", ListConnections)
             .WithName("ListConnections")
             .WithSummary("List all Azure resource connections")
+            .WithDescription("Returns all Azure resource connections (OpenAI, Azure AI Search, etc.) linked to the project. Optionally filter by connection type.")
+            .Produces<List<ConnectionResponse>>()
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         connections.MapGet("/{connectionName}", GetConnection)
             .WithName("GetConnection")
             .WithSummary("Get connection details by name")
+            .WithDescription("Returns metadata for a specific connection. Credentials are not included.")
+            .Produces<ConnectionResponse>()
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
     }

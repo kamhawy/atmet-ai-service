@@ -4,12 +4,12 @@
 
 namespace ATMET.AI.Infrastructure.Extensions;
 
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Configuration;
 using ATMET.AI.Core.Services;
 using ATMET.AI.Infrastructure.Clients;
 using ATMET.AI.Infrastructure.Configuration;
 using ATMET.AI.Infrastructure.HealthChecks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 public static class ServiceCollectionExtensions
 {

@@ -1,9 +1,8 @@
+using ATMET.AI.Core.Exceptions;
+using Azure;
+using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Text.Json;
-using Azure;
-using ATMET.AI.Core.Exceptions;
-using FluentValidation;
-using Microsoft.AspNetCore.Mvc;
 
 namespace ATMET.AI.Api.Middleware;
 

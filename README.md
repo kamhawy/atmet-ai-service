@@ -327,7 +327,7 @@ For issues and questions:
 
 - GitHub Issues: [Project Issues](https://github.com/your-org/atmet-ai-service/issues)
 - Documentation: [Wiki](https://github.com/your-org/atmet-ai-service/wiki)
-- Email: <ai-team@atmet.com>
+- Email: <ai-team@atmet.ai>
 
 ## 🗺️ Roadmap
 

@@ -1,10 +1,9 @@
-using Azure.AI.Agents.Persistent;
-using Azure.AI.Projects;
 using ATMET.AI.Core.Exceptions;
 using ATMET.AI.Core.Models.Requests;
 using ATMET.AI.Core.Models.Responses;
 using ATMET.AI.Core.Services;
 using ATMET.AI.Infrastructure.Clients;
+using Azure.AI.Agents.Persistent;
 using Microsoft.Extensions.Logging;
 
 namespace ATMET.AI.Infrastructure.Services;
@@ -43,6 +42,12 @@ public class AgentService : IAgentService
                 model: request.Model,
                 name: request.Name,
                 instructions: request.Instructions,
+                tools: null,
+                toolResources: null,
+                temperature: request.Temperature,
+                topP: request.TopP,
+                responseFormat: request.ResponseFormat != null ? BinaryData.FromString(request.ResponseFormat) : null,
+                metadata: request.Metadata != null ? new Dictionary<string, string>(request.Metadata) : null,
                 cancellationToken: cancellationToken);
 
             _logger.LogInformation("Successfully created agent: {AgentId}", agent.Value.Id);
@@ -66,11 +71,11 @@ public class AgentService : IAgentService
 
             var agents = new List<AgentResponse>();
             var agentPages = _agentsClient.Administration.GetAgentsAsync(cancellationToken: cancellationToken);
-            
+
             await foreach (var agent in agentPages)
             {
                 agents.Add(MapToAgentResponse(agent));
-                
+
                 if (limit.HasValue && agents.Count >= limit.Value)
                     break;
             }
@@ -130,14 +135,14 @@ public class AgentService : IAgentService
                 assistantId: agentId,
                 model: existingAgent.Value.Model,
                 name: request.Name ?? existingAgent.Value.Name,
-                description: null,
+                description: request.Description ?? existingAgent.Value.Description,
                 instructions: request.Instructions ?? existingAgent.Value.Instructions,
                 tools: null,
                 toolResources: null,
-                temperature: null,
-                topP: null,
-                responseFormat: null,
-                metadata: null,
+                temperature: request.Temperature ?? existingAgent.Value.Temperature,
+                topP: request.TopP ?? existingAgent.Value.TopP,
+                responseFormat: request.ResponseFormat != null ? BinaryData.FromString(request.ResponseFormat) : existingAgent.Value.ResponseFormat,
+                metadata: request.Metadata != null ? new Dictionary<string, string>(request.Metadata) : existingAgent.Value.Metadata,
                 cancellationToken);
 
             _logger.LogInformation("Successfully updated agent: {AgentId}", agentId);
@@ -266,8 +271,8 @@ public class AgentService : IAgentService
         {
             _logger.LogInformation("Adding message to thread: {ThreadId}", threadId);
 
-            var messageRole = request.Role.ToLowerInvariant() == "user" 
-                ? MessageRole.User 
+            var messageRole = request.Role.ToLowerInvariant() == "user"
+                ? MessageRole.User
                 : MessageRole.Agent;
 
             var message = await _agentsClient.Messages.CreateMessageAsync(
@@ -305,8 +310,8 @@ public class AgentService : IAgentService
             _logger.LogInformation("Getting messages for thread: {ThreadId}", threadId);
 
             var messages = new List<MessageResponse>();
-            var sortOrder = order?.ToLowerInvariant() == "asc" 
-                ? ListSortOrder.Ascending 
+            var sortOrder = order?.ToLowerInvariant() == "asc"
+                ? ListSortOrder.Ascending
                 : ListSortOrder.Descending;
 
             var messagePages = _agentsClient.Messages.GetMessagesAsync(
@@ -333,7 +338,7 @@ public class AgentService : IAgentService
                     break;
             }
 
-            _logger.LogInformation("Retrieved {Count} messages for thread: {ThreadId}", 
+            _logger.LogInformation("Retrieved {Count} messages for thread: {ThreadId}",
                 messages.Count, threadId);
 
             return messages;
@@ -352,7 +357,7 @@ public class AgentService : IAgentService
     {
         try
         {
-            _logger.LogInformation("Getting message: {MessageId} from thread: {ThreadId}", 
+            _logger.LogInformation("Getting message: {MessageId} from thread: {ThreadId}",
                 messageId, threadId);
 
             var message = await _agentsClient.Messages.GetMessageAsync(
@@ -395,27 +400,27 @@ public class AgentService : IAgentService
     {
         try
         {
-            _logger.LogInformation("Creating run for thread: {ThreadId} with agent: {AgentId}", 
+            _logger.LogInformation("Creating run for thread: {ThreadId} with agent: {AgentId}",
                 threadId, request.AgentId);
 
             var run = await _agentsClient.Runs.CreateRunAsync(
                 threadId,
                 request.AgentId,
-                overrideModelName: null,
+                overrideModelName: request.OverrideModelName,
                 overrideInstructions: null,
                 additionalInstructions: request.Instructions,
                 additionalMessages: null,
                 overrideTools: null,
-                stream: null,
-                temperature: null,
-                topP: null,
-                maxPromptTokens: null,
-                maxCompletionTokens: null,
+                stream: request.Stream,
+                temperature: request.Temperature,
+                topP: request.TopP,
+                maxPromptTokens: request.MaxPromptTokens,
+                maxCompletionTokens: request.MaxCompletionTokens,
                 truncationStrategy: null,
                 toolChoice: null,
-                responseFormat: null,
-                parallelToolCalls: null,
-                metadata: null,
+                responseFormat: request.ResponseFormat != null ? BinaryData.FromString(request.ResponseFormat) : null,
+                parallelToolCalls: request.ParallelToolCalls,
+                metadata: request.Metadata != null ? new Dictionary<string, string>(request.Metadata) : null,
                 include: null,
                 cancellationToken);
 
@@ -489,8 +494,8 @@ public class AgentService : IAgentService
             _logger.LogInformation("Listing runs for thread: {ThreadId}", threadId);
 
             var runs = new List<RunResponse>();
-            var sortOrder = order?.ToLowerInvariant() == "asc" 
-                ? ListSortOrder.Ascending 
+            var sortOrder = order?.ToLowerInvariant() == "asc"
+                ? ListSortOrder.Ascending
                 : ListSortOrder.Descending;
 
             var runPages = _agentsClient.Runs.GetRunsAsync(
@@ -506,7 +511,7 @@ public class AgentService : IAgentService
                     break;
             }
 
-            _logger.LogInformation("Retrieved {Count} runs for thread: {ThreadId}", 
+            _logger.LogInformation("Retrieved {Count} runs for thread: {ThreadId}",
                 runs.Count, threadId);
 
             return runs;
@@ -543,7 +548,10 @@ public class AgentService : IAgentService
                 Id: file.Value.Id,
                 Filename: file.Value.Filename,
                 Bytes: file.Value.Size,
-                CreatedAt: file.Value.CreatedAt
+                CreatedAt: file.Value.CreatedAt,
+                Purpose: file.Value.Purpose.ToString(),
+                Status: file.Value.Status?.ToString(),
+                StatusDetails: file.Value.StatusDetails
             );
         }
         catch (Exception ex)
@@ -572,7 +580,10 @@ public class AgentService : IAgentService
                 Id: file.Value.Id,
                 Filename: file.Value.Filename,
                 Bytes: file.Value.Size,
-                CreatedAt: file.Value.CreatedAt
+                CreatedAt: file.Value.CreatedAt,
+                Purpose: file.Value.Purpose.ToString(),
+                Status: file.Value.Status?.ToString(),
+                StatusDetails: file.Value.StatusDetails
             );
         }
         catch (NotFoundException) { throw; }
@@ -610,26 +621,62 @@ public class AgentService : IAgentService
 
     private static AgentResponse MapToAgentResponse(PersistentAgent agent)
     {
+        var toolTypes = agent.Tools?
+            .Select(t => t.GetType().Name.Replace("Definition", ""))
+            .ToList();
+
         return new AgentResponse(
             Id: agent.Id,
             Name: agent.Name,
             Model: agent.Model,
             Instructions: agent.Instructions,
             CreatedAt: agent.CreatedAt,
-            Metadata: agent.Metadata?.ToDictionary(k => k.Key, v => v.Value)
+            Metadata: agent.Metadata?.ToDictionary(k => k.Key, v => v.Value),
+            Description: agent.Description,
+            Temperature: agent.Temperature,
+            TopP: agent.TopP,
+            ResponseFormat: agent.ResponseFormat?.ToString(),
+            ToolTypes: toolTypes,
+            ToolResources: null
         );
     }
 
     private static RunResponse MapToRunResponse(ThreadRun run, string threadId, string agentId)
     {
+        RunUsage? usage = null;
+        if (run.Usage != null)
+        {
+            usage = new RunUsage(
+                PromptTokens: run.Usage.PromptTokens,
+                CompletionTokens: run.Usage.CompletionTokens,
+                TotalTokens: run.Usage.TotalTokens
+            );
+        }
+
         return new RunResponse(
             Id: run.Id,
-            ThreadId: threadId,
+            ThreadId: run.ThreadId ?? threadId,
             AgentId: agentId,
             Status: run.Status.ToString(),
             CreatedAt: run.CreatedAt,
             CompletedAt: run.CompletedAt,
-            LastError: run.LastError?.Message
+            LastError: run.LastError?.Message,
+            AssistantId: run.AssistantId,
+            Model: run.Model,
+            Instructions: run.Instructions,
+            StartedAt: run.StartedAt,
+            ExpiresAt: run.ExpiresAt,
+            CancelledAt: run.CancelledAt,
+            FailedAt: run.FailedAt,
+            LastErrorCode: run.LastError?.Code,
+            Usage: usage,
+            MaxPromptTokens: run.MaxPromptTokens,
+            MaxCompletionTokens: run.MaxCompletionTokens,
+            ParallelToolCalls: run.ParallelToolCalls,
+            Temperature: run.Temperature,
+            TopP: run.TopP,
+            Metadata: run.Metadata?.ToDictionary(k => k.Key, v => v.Value),
+            IncompleteReason: run.IncompleteDetails?.Reason.ToString()
         );
     }
 }

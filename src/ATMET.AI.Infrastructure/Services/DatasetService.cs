@@ -1,10 +1,10 @@
-using System.Text.RegularExpressions;
-using Azure.AI.Projects;
 using ATMET.AI.Core.Exceptions;
 using ATMET.AI.Core.Models.Responses;
 using ATMET.AI.Core.Services;
 using ATMET.AI.Infrastructure.Clients;
+using Azure.AI.Projects;
 using Microsoft.Extensions.Logging;
+using System.Text.RegularExpressions;
 
 namespace ATMET.AI.Infrastructure.Services;
 
@@ -213,10 +213,14 @@ public class DatasetService : IDatasetService
 
             // DatasetCredential has BlobReference (AIProjectBlobReference); no ExpirationDateTime in SDK 1.1.0.
             var blobRef = credentials.Value.BlobReference;
-            var sasUri = blobRef?.Credential?.SasUri?.ToString() ?? string.Empty;
+            var sasCred = blobRef?.Credential;
+            var sasUri = sasCred?.SasUri?.ToString() ?? string.Empty;
             return Task.FromResult(new DatasetCredentialsResponse(
                 SasUri: sasUri,
-                ExpiresAt: DateTimeOffset.UtcNow.AddHours(1)
+                ExpiresAt: DateTimeOffset.UtcNow.AddHours(1),
+                StorageAccountArmId: blobRef?.StorageAccountArmId,
+                BlobUri: blobRef?.BlobUri?.ToString(),
+                CredentialType: sasCred?.Type
             ));
         }
         catch (Azure.RequestFailedException ex) when (ex.Status == 404)
@@ -261,12 +265,19 @@ public class DatasetService : IDatasetService
 
     private static DatasetResponse MapToDatasetResponse(AIProjectDataset dataset, string? type = null)
     {
+        var tags = dataset.Tags?.Keys.ToDictionary(k => k, k => dataset.Tags[k]?.ToString() ?? string.Empty);
+
         return new DatasetResponse(
             Id: dataset.Id,
             Name: dataset.Name,
             Version: dataset.Version,
             Type: type ?? dataset.GetType().Name.Replace("Dataset", ""),
-            CreatedAt: DateTimeOffset.UtcNow // SDK type may not expose CreatedAt directly
+            CreatedAt: DateTimeOffset.UtcNow, // SDK type may not expose CreatedAt directly
+            Description: dataset.Description,
+            ConnectionName: dataset.ConnectionName,
+            IsReference: dataset.IsReference,
+            DataUri: dataset.DataUri?.ToString(),
+            Tags: tags
         );
     }
 

@@ -1,8 +1,8 @@
-using Azure.AI.Projects;
 using ATMET.AI.Core.Exceptions;
 using ATMET.AI.Core.Models.Responses;
 using ATMET.AI.Core.Services;
 using ATMET.AI.Infrastructure.Clients;
+using Azure.AI.Projects;
 using Microsoft.Extensions.Logging;
 
 namespace ATMET.AI.Infrastructure.Services;
@@ -42,14 +42,7 @@ public class DeploymentService : IDeploymentService
 
             await foreach (var deployment in deploymentPages)
             {
-                var modelDeployment = deployment as ModelDeployment;
-                deployments.Add(new DeploymentResponse(
-                    Name: deployment.Name ?? "Unknown",
-                    Model: modelDeployment?.ModelName ?? deployment.Name ?? "Unknown",
-                    Publisher: modelDeployment?.ModelPublisher ?? "Unknown",
-                    Type: "ModelDeployment",
-                    Status: "Active"
-                ));
+                deployments.Add(MapToDeploymentResponse(deployment));
             }
 
             _logger.LogInformation("Retrieved {Count} deployments", deployments.Count);
@@ -77,15 +70,7 @@ public class DeploymentService : IDeploymentService
             if (deployment?.Value == null)
                 throw new NotFoundException($"Deployment '{deploymentName}' not found");
 
-            var value = deployment.Value;
-            var modelDeployment = value as ModelDeployment;
-            return new DeploymentResponse(
-                Name: value.Name ?? "Unknown",
-                Model: modelDeployment?.ModelName ?? value.Name ?? "Unknown",
-                Publisher: modelDeployment?.ModelPublisher ?? "Unknown",
-                Type: "ModelDeployment",
-                Status: "Active"
-            );
+            return MapToDeploymentResponse(deployment.Value);
         }
         catch (NotFoundException) { throw; }
         catch (Exception ex)
@@ -93,5 +78,25 @@ public class DeploymentService : IDeploymentService
             _logger.LogError(ex, "Failed to get deployment: {DeploymentName}", deploymentName);
             throw;
         }
+    }
+
+    private static DeploymentResponse MapToDeploymentResponse(AIProjectDeployment deployment)
+    {
+        var modelDeployment = deployment as ModelDeployment;
+        var capabilities = modelDeployment?.Capabilities?.ToDictionary(
+            k => k.Key,
+            v => (object)v.Value);
+
+        return new DeploymentResponse(
+            Name: deployment.Name ?? "Unknown",
+            Model: modelDeployment?.ModelName ?? deployment.Name ?? "Unknown",
+            Publisher: modelDeployment?.ModelPublisher ?? "Unknown",
+            Type: modelDeployment != null ? "ModelDeployment" : deployment.GetType().Name,
+            Status: "Active",
+            ModelVersion: modelDeployment?.ModelVersion,
+            ConnectionName: modelDeployment?.ConnectionName,
+            Sku: modelDeployment?.Sku?.Name,
+            Capabilities: capabilities
+        );
     }
 }

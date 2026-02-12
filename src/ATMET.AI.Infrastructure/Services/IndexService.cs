@@ -1,8 +1,8 @@
-using Azure.AI.Projects;
 using ATMET.AI.Core.Exceptions;
 using ATMET.AI.Core.Models.Responses;
 using ATMET.AI.Core.Services;
 using ATMET.AI.Infrastructure.Clients;
+using Azure.AI.Projects;
 using Microsoft.Extensions.Logging;
 
 namespace ATMET.AI.Infrastructure.Services;
@@ -172,14 +172,18 @@ public class IndexService : IIndexService
         // Extract connection/index name from AzureAISearchIndex if available
         string resolvedConnectionName = connectionName ?? string.Empty;
         string resolvedIndexName = indexName ?? string.Empty;
-        string? description = null;
+        string? description = index.Description;
+        object? fieldMapping = null;
 
         if (index is AzureAISearchIndex searchIndex)
         {
             resolvedConnectionName = searchIndex.ConnectionName ?? resolvedConnectionName;
             resolvedIndexName = searchIndex.IndexName ?? resolvedIndexName;
-            description = searchIndex.Description;
+            description = searchIndex.Description ?? description;
+            fieldMapping = searchIndex.FieldMapping;
         }
+
+        var tags = index.Tags?.Keys.ToDictionary(k => k, k => index.Tags[k]?.ToString() ?? string.Empty);
 
         return new IndexResponse(
             Id: index.Id,
@@ -188,7 +192,10 @@ public class IndexService : IIndexService
             ConnectionName: resolvedConnectionName,
             IndexName: resolvedIndexName,
             Description: description,
-            CreatedAt: DateTimeOffset.UtcNow
+            CreatedAt: DateTimeOffset.UtcNow, // SDK may not expose CreatedAt directly
+            IndexType: index is AzureAISearchIndex ? "AzureSearch" : index.GetType().Name,
+            Tags: tags,
+            FieldMapping: fieldMapping
         );
     }
 }

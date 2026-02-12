@@ -22,6 +22,7 @@ public static class AgentsEndpoints
         agents.MapPost("/", CreateAgent)
             .WithName("CreateAgent")
             .WithSummary("Create a new AI agent")
+            .WithDescription("Creates a persistent agent with the specified model, name, and optional instructions. Supports temperature, top_p, response format, and metadata.")
             .RequireAuthorization("ApiWriter")
             .Produces<AgentResponse>(StatusCodes.Status201Created)
             .ProducesValidationProblem()
@@ -30,18 +31,21 @@ public static class AgentsEndpoints
         agents.MapGet("/", ListAgents)
             .WithName("ListAgents")
             .WithSummary("List all agents")
+            .WithDescription("Returns all agents in the project. Supports limit and sort order (asc/desc).")
             .Produces<List<AgentResponse>>()
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         agents.MapGet("/{agentId}", GetAgent)
             .WithName("GetAgent")
             .WithSummary("Get agent by ID")
+            .WithDescription("Returns the full agent configuration including tools, temperature, and metadata.")
             .Produces<AgentResponse>()
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         agents.MapPut("/{agentId}", UpdateAgent)
             .WithName("UpdateAgent")
             .WithSummary("Update an existing agent")
+            .WithDescription("Updates agent name, instructions, description, temperature, top_p, response format, or metadata. Omitted fields retain existing values.")
             .RequireAuthorization("ApiWriter")
             .Produces<AgentResponse>()
             .ProducesValidationProblem()
@@ -50,6 +54,7 @@ public static class AgentsEndpoints
         agents.MapDelete("/{agentId}", DeleteAgent)
             .WithName("DeleteAgent")
             .WithSummary("Delete an agent")
+            .WithDescription("Permanently removes the agent. Threads and runs associated with it may be affected.")
             .RequireAuthorization("ApiWriter")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status404NotFound);
@@ -60,19 +65,22 @@ public static class AgentsEndpoints
 
         agents.MapPost("/{agentId}/threads", CreateThread)
             .WithName("CreateThread")
-            .WithSummary("Create a new conversation thread for an agent")
+            .WithSummary("Create a new conversation thread")
+            .WithDescription("Creates a thread for multi-turn conversations with an agent. Optional metadata can be attached.")
             .Produces<ThreadResponse>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         agents.MapGet("/threads/{threadId}", GetThread)
             .WithName("GetThread")
             .WithSummary("Get thread by ID")
+            .WithDescription("Returns thread metadata including creation time and custom metadata.")
             .Produces<ThreadResponse>()
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         agents.MapDelete("/threads/{threadId}", DeleteThread)
             .WithName("DeleteThread")
             .WithSummary("Delete a thread")
+            .WithDescription("Permanently deletes a thread and all its messages and runs.")
             .RequireAuthorization("ApiWriter")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status404NotFound);
@@ -84,6 +92,7 @@ public static class AgentsEndpoints
         agents.MapPost("/threads/{threadId}/messages", AddMessage)
             .WithName("AddMessage")
             .WithSummary("Add a message to a thread")
+            .WithDescription("Adds a user or assistant message. Supports file attachments via fileIds or multi-part content via contentItems.")
             .Produces<MessageResponse>(StatusCodes.Status201Created)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status404NotFound);
@@ -91,12 +100,14 @@ public static class AgentsEndpoints
         agents.MapGet("/threads/{threadId}/messages", GetMessages)
             .WithName("GetMessages")
             .WithSummary("Get all messages in a thread")
+            .WithDescription("Returns messages in the thread. Supports limit and sort order (asc/desc).")
             .Produces<List<MessageResponse>>()
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         agents.MapGet("/threads/{threadId}/messages/{messageId}", GetMessage)
             .WithName("GetMessage")
             .WithSummary("Get a specific message")
+            .WithDescription("Returns a single message by ID including content and attachments.")
             .Produces<MessageResponse>()
             .ProducesProblem(StatusCodes.Status404NotFound);
 
@@ -107,6 +118,7 @@ public static class AgentsEndpoints
         agents.MapPost("/threads/{threadId}/runs", CreateRun)
             .WithName("CreateRun")
             .WithSummary("Create and execute a run")
+            .WithDescription("Starts an agent run on the thread. Supports stream, temperature, top_p, max tokens, parallel tool calls, and override model.")
             .Produces<RunResponse>(StatusCodes.Status201Created)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status404NotFound);
@@ -114,18 +126,21 @@ public static class AgentsEndpoints
         agents.MapGet("/threads/{threadId}/runs/{runId}", GetRun)
             .WithName("GetRun")
             .WithSummary("Get run status and details")
+            .WithDescription("Returns run status, usage, timestamps, and any error information.")
             .Produces<RunResponse>()
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         agents.MapPost("/threads/{threadId}/runs/{runId}/cancel", CancelRun)
             .WithName("CancelRun")
             .WithSummary("Cancel a running execution")
+            .WithDescription("Cancels an in-progress run.")
             .Produces<RunResponse>()
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         agents.MapGet("/threads/{threadId}/runs", ListRuns)
             .WithName("ListRuns")
             .WithSummary("List all runs for a thread")
+            .WithDescription("Returns runs for the thread. Supports limit and sort order.")
             .Produces<List<RunResponse>>()
             .ProducesProblem(StatusCodes.Status404NotFound);
 
@@ -136,6 +151,7 @@ public static class AgentsEndpoints
         agents.MapPost("/files", UploadFile)
             .WithName("UploadAgentFile")
             .WithSummary("Upload a file for agent use")
+            .WithDescription("Uploads a file for use with agents (e.g., code interpreter, file search). Returns file ID, size, purpose, and status.")
             .DisableAntiforgery()
             .Produces<FileResponse>(StatusCodes.Status201Created)
             .ProducesValidationProblem();
@@ -143,12 +159,14 @@ public static class AgentsEndpoints
         agents.MapGet("/files/{fileId}", GetFile)
             .WithName("GetAgentFile")
             .WithSummary("Get file metadata")
+            .WithDescription("Returns file metadata including size, purpose, and processing status.")
             .Produces<FileResponse>()
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         agents.MapDelete("/files/{fileId}", DeleteFile)
             .WithName("DeleteAgentFile")
             .WithSummary("Delete a file")
+            .WithDescription("Removes a file from agent storage.")
             .RequireAuthorization("ApiWriter")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status404NotFound);

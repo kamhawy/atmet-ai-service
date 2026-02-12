@@ -1,6 +1,6 @@
-﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
+﻿using ATMET.AI.Infrastructure.Clients;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
-using ATMET.AI.Infrastructure.Clients;
 
 namespace ATMET.AI.Infrastructure.HealthChecks
 {

@@ -100,6 +100,7 @@ curl -H "Authorization: Bearer $TOKEN" \
 ## 🎨 Key Features Implemented
 
 ### ✅ Complete Agent Lifecycle Management
+
 - **Create Agents**: Configure AI agents with custom instructions, tools, and models
 - **Manage Threads**: Create and manage conversation threads
 - **Send Messages**: Add user and system messages to conversations
@@ -108,27 +109,32 @@ curl -H "Authorization: Bearer $TOKEN" \
 - **Monitor Status**: Track run execution and completion
 
 ### ✅ AI Model Management
+
 - **List Deployments**: Enumerate all deployed AI models
 - **Filter Models**: Filter by publisher, type, or other criteria
 - **Get Details**: Retrieve specific model deployment information
 
 ### ✅ Resource Connections
+
 - **Enumerate Connections**: List all Azure resource connections
 - **Connection Types**: Support for OpenAI, AI Search, Storage, etc.
 - **Secure Access**: Retrieve connection details with optional credentials
 
 ### ✅ Dataset Management
+
 - **File Upload**: Upload single files as datasets
 - **Folder Upload**: Upload multiple files with pattern matching
 - **Versioning**: Manage dataset versions
 - **Credentials**: Secure access to dataset storage
 
 ### ✅ Search Indexes
+
 - **Create Indexes**: Configure Azure AI Search indexes
 - **Version Control**: Manage index versions
 - **Integration**: Seamless integration with AI Search connections
 
 ### ✅ Chat Completions
+
 - **Standard Completions**: Request/response chat completions
 - **Streaming**: Server-sent events for real-time responses
 - **Multi-modal**: Support for text and future multi-modal inputs
@@ -136,6 +142,7 @@ curl -H "Authorization: Bearer $TOKEN" \
 ## 🔧 Architecture Highlights
 
 ### Clean Architecture
+
 ```
 API Layer      → Endpoints (HTTP handling)
 ↓
@@ -147,6 +154,7 @@ Azure AI       → Foundry Project (Managed Identity)
 ```
 
 ### Security by Default
+
 - ✅ **Managed Identity**: No credentials in code
 - ✅ **Azure AD Auth**: Bearer token authentication
 - ✅ **CORS**: Configurable allowed origins
@@ -154,12 +162,14 @@ Azure AI       → Foundry Project (Managed Identity)
 - ✅ **Security Headers**: X-Frame-Options, CSP, etc.
 
 ### Performance Optimized
+
 - ✅ **Output Caching**: Cache deployment and connection lists
 - ✅ **Async/Await**: Non-blocking operations throughout
 - ✅ **Connection Pooling**: Singleton client instances
 - ✅ **Minimal APIs**: Reduced overhead vs. MVC controllers
 
 ### Production Ready
+
 - ✅ **Health Checks**: `/health`, `/health/ready`, `/health/live`
 - ✅ **Structured Logging**: Serilog with Application Insights
 - ✅ **Error Handling**: Global exception middleware
@@ -321,7 +331,7 @@ console.log('Agent response:', messages[0].content);
 
 - **Issues**: GitHub Issues
 - **Documentation**: Project Wiki
-- **Email**: ai-team@atmet.com
+- **Email**: <ai-team@atmet.ai>
 
 ## 📄 License
 

@@ -1,10 +1,10 @@
-﻿using Azure.AI.Projects;
+﻿using ATMET.AI.Infrastructure.Configuration;
 using Azure.AI.Agents.Persistent;
+using Azure.AI.Projects;
 using Azure.Core;
 using Azure.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ATMET.AI.Infrastructure.Configuration;
 
 namespace ATMET.AI.Infrastructure.Clients
 {

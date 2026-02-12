@@ -1,8 +1,8 @@
-using Azure.AI.Projects;
 using ATMET.AI.Core.Exceptions;
 using ATMET.AI.Core.Models.Responses;
 using ATMET.AI.Core.Services;
 using ATMET.AI.Infrastructure.Clients;
+using Azure.AI.Projects;
 using Microsoft.Extensions.Logging;
 
 namespace ATMET.AI.Infrastructure.Services;
@@ -108,12 +108,12 @@ public class ConnectionService : IConnectionService
         return new ConnectionResponse(
             Name: connection.Name,
             Type: connection.Type.ToString(),
-            //Category: connection.Category.ToString(),
-            Category: "",
             Target: connection.Target,
             Properties: connection.Metadata?.ToDictionary(
                 k => k.Key,
-                v => (object)v.Value) ?? new Dictionary<string, object>()
+                v => (object)v.Value) ?? new Dictionary<string, object>(),
+            Id: connection.Id,
+            IsDefault: connection.IsDefault
         );
     }
 }

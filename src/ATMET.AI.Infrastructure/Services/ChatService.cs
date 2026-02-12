@@ -1,16 +1,16 @@
-using System.ClientModel;
-using System.Runtime.CompilerServices;
-using Azure.AI.OpenAI;
-using Azure.AI.Projects;
-using Azure.Identity;
 using ATMET.AI.Core.Models.Requests;
 using ATMET.AI.Core.Models.Responses;
 using ATMET.AI.Core.Services;
 using ATMET.AI.Infrastructure.Clients;
 using ATMET.AI.Infrastructure.Configuration;
+using Azure.AI.OpenAI;
+using Azure.AI.Projects;
+using Azure.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OpenAI.Chat;
+using System.ClientModel;
+using System.Runtime.CompilerServices;
 
 namespace ATMET.AI.Infrastructure.Services;
 
@@ -79,7 +79,9 @@ public class ChatService : IChatService
                     PromptTokens: completion.Usage.InputTokenCount,
                     CompletionTokens: completion.Usage.OutputTokenCount,
                     TotalTokens: completion.Usage.TotalTokenCount),
-                Created: completion.CreatedAt
+                Created: completion.CreatedAt,
+                Model: completion.Model ?? deploymentName,
+                SystemFingerprint: completion.SystemFingerprint
             );
         }
         catch (Exception ex)
@@ -135,7 +137,8 @@ public class ChatService : IChatService
                         FinishReason: update.FinishReason?.ToString()
                     )
                 },
-                Created: update.CreatedAt
+                Created: update.CreatedAt,
+                Model: update.Model ?? deploymentName
             );
         }
 
@@ -205,6 +208,13 @@ public class ChatService : IChatService
 
         if (request.MaxTokens.HasValue)
             options.MaxOutputTokenCount = request.MaxTokens.Value;
+
+        if (request.TopP.HasValue)
+            options.TopP = (float)request.TopP.Value;
+
+        if (request.StopSequences?.Count > 0)
+            foreach (var stop in request.StopSequences)
+                options.StopSequences.Add(stop);
 
         return options;
     }

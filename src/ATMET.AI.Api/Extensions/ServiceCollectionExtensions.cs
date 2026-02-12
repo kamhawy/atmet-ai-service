@@ -1,13 +1,13 @@
-using System.Text.Json.Serialization;
-using System.Threading.RateLimiting;
 using ATMET.AI.Api.Authentication;
 using ATMET.AI.Infrastructure.Configuration;
-using Microsoft.AspNetCore.Authentication;
+using ATMET.AI.Infrastructure.Extensions;
+using FluentValidation;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi;
-using FluentValidation;
-using ATMET.AI.Infrastructure.Extensions;
+using System.Reflection;
+using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 
 namespace ATMET.AI.Api.Extensions;
 
@@ -144,7 +144,7 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Configures Swagger/OpenAPI with Bearer security.
+    /// Configures Swagger/OpenAPI with API key security and enhanced documentation.
     /// </summary>
     public static IServiceCollection AddApiSwagger(this IServiceCollection services)
     {
@@ -155,20 +155,40 @@ public static class ServiceCollectionExtensions
             {
                 Title = "ATMET AI Service API",
                 Version = "v1",
-                Description = "Azure AI Foundry SDK Encapsulation API",
-                Contact = new()
-                {
-                    Name = "ATMET AI Team",
-                    Email = "ai-team@atmet.com"
-                }
+                Description = """
+                    REST API encapsulating Azure AI Foundry SDK capabilities.
+
+                    **Features:**
+                    - **Agents**: Create and manage persistent AI agents with threads, messages, runs, and file uploads
+                    - **Chat**: Azure OpenAI chat completions (sync and streaming)
+                    - **Deployments**: List and inspect model deployments (GPT-4, GPT-4o, etc.)
+                    - **Connections**: Azure resource connections (OpenAI, AI Search)
+                    - **Datasets**: Upload and manage datasets for training/inference
+                    - **Indexes**: Azure AI Search index definitions
+
+                    **Authentication**: All endpoints require an API key in the `X-Api-Key` header.
+                    """,
+                Contact = new() { Name = "ATMET AI Team", Email = "ai-team@atmet.ai" }
             });
+
+            // Include XML comments from API and Core assemblies
+            var apiXmlPath = Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
+            if (File.Exists(apiXmlPath))
+                options.IncludeXmlComments(apiXmlPath);
+
+            var coreAssembly = typeof(ATMET.AI.Core.Models.Requests.CreateAgentRequest).Assembly;
+            var coreXmlPath = Path.Combine(AppContext.BaseDirectory, $"{coreAssembly.GetName().Name}.xml");
+            if (File.Exists(coreXmlPath))
+                options.IncludeXmlComments(coreXmlPath);
+
+            options.OrderActionsBy(api => api.RelativePath ?? "");
 
             options.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
             {
                 Name = "X-Api-Key",
                 Type = SecuritySchemeType.ApiKey,
                 In = ParameterLocation.Header,
-                Description = "API key passed in the X-Api-Key header."
+                Description = "API key for authentication. Pass in the X-Api-Key header."
             });
 
             options.AddSecurityRequirement(document => new OpenApiSecurityRequirement

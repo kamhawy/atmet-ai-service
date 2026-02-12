@@ -6,6 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>ATMET.AI.Api</RootNamespace>
     <AssemblyName>ATMET.AI.Api</AssemblyName>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,9 +19,9 @@
     
     <!-- ASP.NET Core Packages -->
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.1.0" />
-    <PackageReference Include="Microsoft.OpenApi" Version="2.4.1" />
-    <PackageReference Include="Scalar.AspNetCore" Version="2.9.0" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.3.0" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.6.1" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.12.38" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.2" />
     
     <!-- Observability -->
