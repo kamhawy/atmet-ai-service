@@ -1,20 +1,21 @@
 # ATMET AI Service
 
-A comprehensive .NET 10 Web API that encapsulates Azure AI Foundry SDK capabilities, providing unified REST endpoints for frontend SPA applications.
+A comprehensive .NET 10 Web API that encapsulates Azure AI Foundry SDK capabilities, providing unified REST endpoints for frontend SPA applications. This service replaces direct Azure AI Foundry SDK usage in client applications (e.g., the **atmetai-sigmapaints-demo** React SPA), enabling centralized configuration, managed identity authentication to Azure, and consistent API contracts.
 
 ## 🚀 Features
 
-- **Agents Management**: Create, manage, and execute AI agents with full conversation support
-- **Deployments**: Enumerate and manage AI model deployments
-- **Connections**: Manage Azure resource connections
-- **Datasets**: Upload, version, and manage training datasets
-- **Indexes**: Create and manage search indexes for RAG scenarios
-- **Chat Completions**: Azure OpenAI chat completions with streaming support
+- **Agents Management**: Create, manage, and execute AI agents with full conversation support (threads, messages, runs, file uploads)
+- **Deployments**: Enumerate and manage AI model deployments (GPT-4, GPT-4o, etc.)
+- **Connections**: List and inspect Azure resource connections (OpenAI, AI Search, storage)
+- **Datasets**: Upload, version, and manage datasets for RAG and training
+- **Indexes**: Create and manage Azure AI Search indexes for RAG scenarios
+- **Chat Completions**: Azure OpenAI chat completions with sync and streaming support
 - **Managed Identity**: Secure, keyless authentication to Azure services
-- **Health Checks**: Comprehensive health monitoring
+- **API Key Auth**: Simple `X-Api-Key` header authentication for SPA clients
+- **Health Checks**: Comprehensive health monitoring (`/health`, `/health/ready`, `/health/live`)
 - **Observability**: Application Insights integration with structured logging
 - **Performance**: Output caching, response compression, and connection pooling
-- **Security**: Azure AD authentication, CORS, rate limiting
+- **Security**: API key authentication, CORS, rate limiting, security headers
 
 ## 📋 Prerequisites
 
@@ -131,22 +132,26 @@ Update `appsettings.json`:
 {
   "AzureAI": {
     "ProjectEndpoint": "https://your-resource.services.ai.azure.com/api/projects/your-project-id",
-    "ManagedIdentityClientId": null,  // or user-assigned identity client ID
+    "ManagedIdentityClientId": null,
     "DefaultModelDeployment": "gpt-4o"
   },
-  "AzureAd": {
-    "Instance": "https://login.microsoftonline.com/",
-    "TenantId": "your-tenant-id",
-    "ClientId": "your-api-client-id",
-    "Audience": "api://your-api-client-id"
+  "ApiKeys": {
+    "HeaderName": "X-Api-Key",
+    "Keys": ["your-api-key-for-spa-clients"]
   },
   "ApplicationInsights": {
     "ConnectionString": "your-app-insights-connection-string"
   },
   "Cors": {
     "AllowedOrigins": [
-      "https://your-spa-domain.com"
+      "https://your-spa-domain.com",
+      "http://localhost:3000",
+      "http://localhost:4200"
     ]
+  },
+  "RateLimiting": {
+    "PermitLimit": 100,
+    "Window": "00:01:00"
   }
 }
 ```
@@ -159,7 +164,8 @@ az webapp config appsettings set \
     --resource-group rg-atmet-ai \
     --settings \
     AzureAI__ProjectEndpoint="https://..." \
-    AzureAI__DefaultModelDeployment="gpt-4o" \
+    ApiKeys__Keys__0="your-api-key" \
+    Cors__AllowedOrigins__0="https://your-spa.com" \
     ApplicationInsights__ConnectionString="..."
 ```
 
@@ -170,16 +176,15 @@ az webapp config appsettings set \
 cd src/ATMET.AI.Api
 dotnet run
 
-# Navigate to Swagger UI
-# https://localhost:5001
+# API docs: /scalar (Scalar) or /swagger (Swagger UI)
+# Example: https://localhost:5001/scalar
 ```
 
-For local development, use `DefaultAzureCredential` which will attempt:
+For local development, `DefaultAzureCredential` authenticates to Azure:
 
 1. Azure CLI credentials (`az login`)
-2. Visual Studio credentials
-3. VS Code credentials
-4. Managed Identity (when deployed)
+2. Visual Studio / VS Code credentials
+3. Managed Identity (when deployed)
 
 ### 5. Deploy to Azure
 
@@ -201,57 +206,113 @@ Or use GitHub Actions / Azure DevOps pipelines (see `.github/workflows` or `azur
 
 ### Base URL
 
-```bash
+```text
 https://your-app-service.azurewebsites.net/api/v1
 ```
 
+Interactive documentation: **/scalar** (Scalar UI) or **/swagger** (Swagger UI).
+
 ### Authentication
 
-All endpoints require Bearer token authentication:
+All endpoints require an API key in the `X-Api-Key` header:
 
 ```http
-Authorization: Bearer {azure-ad-token}
+X-Api-Key: your-api-key
+```
+
+Configure valid keys in `appsettings.json` under `ApiKeys.Keys`.
+
+**Example request:**
+
+```bash
+curl -X GET "https://your-api.azurewebsites.net/api/v1/agents" \
+  -H "X-Api-Key: your-api-key"
 ```
 
 ### Endpoints Overview
 
 #### Agents
 
-- `POST /agents` - Create agent
-- `GET /agents` - List agents
-- `GET /agents/{id}` - Get agent
-- `POST /agents/{id}/threads` - Create conversation
-- `POST /threads/{id}/messages` - Add message
-- `POST /threads/{id}/runs` - Execute agent
+| Method   | Path                                             | Description                |
+| -------- | ------------------------------------------------ | -------------------------- |
+| `POST`   | `/agents`                                        | Create agent               |
+| `GET`    | `/agents`                                        | List agents (limit, order) |
+| `GET`    | `/agents/{agentId}`                              | Get agent                  |
+| `PUT`    | `/agents/{agentId}`                              | Update agent               |
+| `DELETE` | `/agents/{agentId}`                              | Delete agent               |
+| `POST`   | `/agents/{agentId}/threads`                      | Create thread              |
+| `GET`    | `/agents/threads/{threadId}`                     | Get thread                 |
+| `DELETE` | `/agents/threads/{threadId}`                     | Delete thread              |
+| `POST`   | `/agents/threads/{threadId}/messages`            | Add message                |
+| `GET`    | `/agents/threads/{threadId}/messages`            | Get messages               |
+| `POST`   | `/agents/threads/{threadId}/runs`                | Create/execute run         |
+| `GET`    | `/agents/threads/{threadId}/runs/{runId}`        | Get run status             |
+| `POST`   | `/agents/threads/{threadId}/runs/{runId}/cancel` | Cancel run                 |
+| `POST`   | `/agents/files`                                  | Upload file for agent use  |
+| `GET`    | `/agents/files/{fileId}`                         | Get file metadata          |
+| `DELETE` | `/agents/files/{fileId}`                         | Delete file                |
 
 #### Deployments
 
-- `GET /deployments` - List AI models
-- `GET /deployments/{name}` - Get model details
+| Method | Path                            | Description                                        |
+| ------ | ------------------------------- | -------------------------------------------------- |
+| `GET`  | `/deployments`                  | List AI models (modelPublisher, modelType filters) |
+| `GET`  | `/deployments/{deploymentName}` | Get model details                                  |
 
 #### Connections
 
-- `GET /connections` - List connections
-- `GET /connections/{name}` - Get connection
+| Method | Path                            | Description                              |
+| ------ | ------------------------------- | ---------------------------------------- |
+| `GET`  | `/connections`                  | List connections (connectionType filter) |
+| `GET`  | `/connections/default`          | Get default project connection           |
+| `GET`  | `/connections/{connectionName}` | Get connection details                   |
 
-#### Datasets
+#### Datasets (RAG / Training)
 
-- `POST /datasets/upload/file` - Upload file
-- `GET /datasets` - List datasets
-- `DELETE /datasets/{name}/versions/{version}` - Delete dataset
+| Method   | Path                                  | Description                     |
+| -------- | ------------------------------------- | ------------------------------- |
+| `POST`   | `/datasets/upload/file`               | Upload single file (multipart)  |
+| `POST`   | `/datasets/upload/folder`             | Upload multiple files           |
+| `GET`    | `/datasets`                           | List datasets (latest versions) |
+| `GET`    | `/datasets/{name}/versions`           | List dataset versions           |
+| `GET`    | `/datasets/{name}/versions/{version}` | Get dataset                     |
+| `DELETE` | `/datasets/{name}/versions/{version}` | Delete dataset                  |
 
-#### Indexes
+#### Indexes (RAG / Azure AI Search)
 
-- `POST /indexes` - Create index
-- `GET /indexes` - List indexes
-- `GET /indexes/{name}/versions/{version}` - Get index
+| Method   | Path                                 | Description            |
+| -------- | ------------------------------------ | ---------------------- |
+| `POST`   | `/indexes`                           | Create or update index |
+| `GET`    | `/indexes`                           | List indexes           |
+| `GET`    | `/indexes/{name}/versions`           | List index versions    |
+| `GET`    | `/indexes/{name}/versions/{version}` | Get index              |
+| `DELETE` | `/indexes/{name}/versions/{version}` | Delete index           |
 
 #### Chat
 
-- `POST /chat/completions` - Chat completion
-- `POST /chat/completions/stream` - Streaming completion
+| Method | Path                       | Description                |
+| ------ | -------------------------- | -------------------------- |
+| `POST` | `/chat/completions`        | Chat completion            |
+| `POST` | `/chat/completions/stream` | Streaming completion (SSE) |
 
-Full API documentation available at `/swagger` when running.
+Full API reference: `docs/API-REFERENCE.md`
+
+## 🌐 SPA Integration
+
+The **atmetai-sigmapaints-demo** React SPA uses this API as a replacement for direct Azure AI Foundry SDK usage. Configure the SPA with:
+
+```env
+VITE_ATMET_AI_API_URL=https://your-atmet-ai-service.azurewebsites.net
+VITE_ATMET_AI_API_KEY=your-api-key
+```
+
+Features wired to this API:
+
+- **Knowledge Base (RAG)**: Datasets, indexes, upload, chat completions for test queries
+- **Agents Settings**: (planned) List/sync agents, deployments, connections
+- **Agents Monitor**: (planned) Execution logs, runs
+
+Add the SPA origin to `Cors.AllowedOrigins` in `appsettings.json`.
 
 ## 🧪 Testing
 
@@ -294,20 +355,20 @@ Structured logging with Serilog:
 
 ## 🔒 Security
 
-- **Authentication**: Azure AD Bearer tokens
-- **Authorization**: Role-based access control
-- **CORS**: Configurable allowed origins
+- **Authentication**: API key via `X-Api-Key` header (for SPA clients)
+- **Azure Services**: Managed Identity for keyless auth to Azure AI, Storage, Search
+- **CORS**: Configurable allowed origins (SPA domains, localhost)
 - **HTTPS**: Enforced in production
-- **Managed Identity**: No credentials in code
-- **Security Headers**: X-Content-Type-Options, X-Frame-Options, etc.
+- **Rate Limiting**: Fixed window (100 req/min by default)
+- **Security Headers**: X-Content-Type-Options, X-Frame-Options, X-XSS-Protection
 
 ## ⚡ Performance
 
-- **Output Caching**: Cached responses for deployments, connections
+- **Output Caching**: Cached responses for deployments, connections, indexes (configurable TTL)
 - **Response Compression**: Gzip compression
-- **Connection Pooling**: Singleton Azure AI clients
+- **Connection Pooling**: Singleton Azure AI clients via `AzureAIClientFactory`
 - **Async/Await**: Non-blocking operations throughout
-- **Minimal APIs**: Reduced overhead vs. controllers
+- **Minimal APIs**: Lightweight endpoint registration
 
 ## 🤝 Contributing
 
@@ -331,12 +392,11 @@ For issues and questions:
 
 ## 🗺️ Roadmap
 
+- [ ] Migrate Agents Settings & Monitor from direct Foundry SDK to this API
 - [ ] Batch processing support
 - [ ] WebSocket support for real-time streaming
-- [ ] Multi-tenancy support
+- [ ] Multi-tenancy / per-entity configuration
 - [ ] Custom tool integrations
-- [ ] Enhanced caching strategies
-- [ ] GraphQL endpoint support
 - [ ] OpenTelemetry integration
 
 ## 📚 Additional Resources
