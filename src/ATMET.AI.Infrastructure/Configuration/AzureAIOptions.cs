@@ -13,6 +13,8 @@ namespace ATMET.AI.Infrastructure.Configuration
 
         public string ProjectEndpoint { get; set; } = string.Empty;
         public string? ManagedIdentityClientId { get; set; }
+        public string? ApiKey { get; set; }
+        public string? AzureOpenAIEndpoint { get; set; }
         public bool EnableTelemetry { get; set; } = true;
         public string DefaultModelDeployment { get; set; } = "gpt-4o";
         public int RequestTimeoutSeconds { get; set; } = 120;

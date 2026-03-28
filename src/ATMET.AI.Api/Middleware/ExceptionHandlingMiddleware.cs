@@ -61,6 +61,11 @@ public class ExceptionHandlingMiddleware
                 "Resource Not Found",
                 notFoundEx.Message
             ),
+            ForbiddenException forbiddenEx => (
+                HttpStatusCode.Forbidden,
+                "Forbidden",
+                forbiddenEx.Message
+            ),
             UnauthorizedAccessException => (
                 HttpStatusCode.Unauthorized,
                 "Unauthorized",

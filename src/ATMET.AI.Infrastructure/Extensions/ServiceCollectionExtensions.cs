@@ -35,6 +35,37 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    public static IServiceCollection AddSupabaseServices(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        // Register configuration
+        services.Configure<SupabaseOptions>(
+            configuration.GetSection(SupabaseOptions.SectionName));
+
+        // Register SupabaseRestClient as a typed HttpClient (singleton-safe via HttpClientFactory)
+        services.AddHttpClient<SupabaseRestClient>()
+            .ConfigureHttpClient((sp, client) =>
+            {
+                // Base config is handled in SupabaseRestClient constructor
+            })
+            .AddStandardResilienceHandler();
+
+        // Register portal service implementations
+        services.AddScoped<IPortalCatalogService, Services.Portal.PortalCatalogService>();
+        services.AddScoped<IPortalCaseService, Services.Portal.PortalCaseService>();
+        services.AddScoped<IPortalConversationService, Services.Portal.PortalConversationService>();
+        services.AddScoped<IPortalDocumentService, Services.Portal.PortalDocumentService>();
+        services.AddScoped<IPortalFormService, Services.Portal.PortalFormService>();
+        services.AddScoped<IPortalWorkflowService, Services.Portal.PortalWorkflowService>();
+        services.AddScoped<IPortalActivityService, Services.Portal.PortalActivityService>();
+
+        // Portal AI agent service (orchestrates chat → tool calls → portal services)
+        services.AddScoped<IPortalAgentService, Services.Portal.PortalAgentService>();
+
+        return services;
+    }
+
     public static IHealthChecksBuilder AddAzureAIHealthCheck(
         this IHealthChecksBuilder builder)
     {
@@ -42,5 +73,14 @@ public static class ServiceCollectionExtensions
             "azure-ai-foundry",
             tags: new[] { "ready" },
             timeout: TimeSpan.FromSeconds(15));
+    }
+
+    public static IHealthChecksBuilder AddSupabaseHealthCheck(
+        this IHealthChecksBuilder builder)
+    {
+        return builder.AddCheck<SupabaseHealthCheck>(
+            "supabase",
+            tags: new[] { "ready" },
+            timeout: TimeSpan.FromSeconds(10));
     }
 }

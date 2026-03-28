@@ -40,7 +40,7 @@ namespace ATMET.AI.Infrastructure.Clients
         {
             try
             {
-                var credential = CreateCredential();
+                var credential = CreateTokenCredential();
                 var endpoint = new Uri(_options.ProjectEndpoint);
 
                 _logger.LogInformation(
@@ -60,7 +60,7 @@ namespace ATMET.AI.Infrastructure.Clients
         {
             try
             {
-                var credential = CreateCredential();
+                var credential = CreateTokenCredential();
 
                 _logger.LogInformation(
                     "Creating PersistentAgentsClient for endpoint: {Endpoint}",
@@ -75,7 +75,7 @@ namespace ATMET.AI.Infrastructure.Clients
             }
         }
 
-        private TokenCredential CreateCredential()
+        private TokenCredential CreateTokenCredential()
         {
             if (!string.IsNullOrEmpty(_options.ManagedIdentityClientId))
             {

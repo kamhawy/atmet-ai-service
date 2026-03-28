@@ -1,4 +1,5 @@
 using ATMET.AI.Api.Endpoints;
+using ATMET.AI.Api.Endpoints.Portal;
 using ATMET.AI.Api.Middleware;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -38,6 +39,7 @@ public static class WebApplicationExtensions
         app.UseCors("AllowSPA");
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseOutputCache();
         app.UseRateLimiter();
 
         return app;
@@ -104,6 +106,16 @@ public static class WebApplicationExtensions
         DatasetsEndpoints.MapEndpoints(apiGroup);
         IndexesEndpoints.MapEndpoints(apiGroup);
         ChatEndpoints.MapEndpoints(apiGroup);
+
+        // Portal endpoints (Supabase-backed)
+        PortalServicesEndpoints.MapEndpoints(apiGroup);
+        PortalCasesEndpoints.MapEndpoints(apiGroup);
+        PortalConversationsEndpoints.MapEndpoints(apiGroup);
+        PortalDocumentsEndpoints.MapEndpoints(apiGroup);
+        PortalFormsEndpoints.MapEndpoints(apiGroup);
+        PortalWorkflowEndpoints.MapEndpoints(apiGroup);
+        PortalActivityEndpoints.MapEndpoints(apiGroup);
+        PortalChatEndpoints.MapEndpoints(apiGroup);
 
         app.MapGet("/", () => Results.Ok(new
         {

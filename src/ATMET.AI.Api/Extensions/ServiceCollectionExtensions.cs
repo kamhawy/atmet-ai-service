@@ -22,11 +22,17 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddApiServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddAzureAIServices(configuration);
+        services.AddSupabaseServices(configuration);
         services.AddApiAuthentication(configuration);
         services.AddApiAuthorization();
         services.AddApiCors(configuration);
         services.AddApiRateLimiting(configuration);
         services.AddMemoryCache();
+        services.AddOutputCache(options =>
+        {
+            options.AddPolicy("PortalCatalog", builder =>
+                builder.Expire(TimeSpan.FromMinutes(5)).Tag("portal-catalog"));
+        });
         services.AddApiHttpClients();
         services.AddApiHealthChecks();
         services.AddApiSwagger();
@@ -139,7 +145,8 @@ public static class ServiceCollectionExtensions
     {
         services.AddHealthChecks()
             .AddCheck("self", () => HealthCheckResult.Healthy())
-            .AddAzureAIHealthCheck();
+            .AddAzureAIHealthCheck()
+            .AddSupabaseHealthCheck();
         return services;
     }
 
