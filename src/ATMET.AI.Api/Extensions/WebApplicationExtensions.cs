@@ -24,13 +24,13 @@ public static class WebApplicationExtensions
         app.UseSwagger();
         app.UseSwaggerUI(options =>
         {
-            options.SwaggerEndpoint("/swagger/v1/swagger.json", "ATMET AI Service API v1");
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "ATMET AI Service API — OpenAPI v1");
             options.RoutePrefix = "swagger";
         });
         // Scalar API reference UI (modern, production-ready docs)
         app.MapScalarApiReference(options =>
         {
-            options.WithTitle("ATMET AI Service API");
+            options.WithTitle("ATMET AI Service API — OpenAPI v1");
             // Swashbuckle serves at /swagger/{documentName}/swagger.json — use placeholder so Scalar resolves "v1" correctly.
             options.WithOpenApiRoutePattern("/swagger/{documentName}/swagger.json");
         });
@@ -125,7 +125,14 @@ public static class WebApplicationExtensions
             Status = "Running",
             Documentation = "/scalar",
             Health = "/health"
-        })).WithTags("Info");
+        }))
+            .WithTags("Info")
+            .WithSummary("Public service card")
+            .WithDescription("""
+                Lightweight discovery payload for operators and load balancers. **No API key** required.
+
+                Use **`/scalar`** or **`/swagger`** for the full OpenAPI document, and **`/health`** for orchestration probes.
+                """);
 
         return app;
     }

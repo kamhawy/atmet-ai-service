@@ -24,17 +24,33 @@ public static class ChatEndpoints
         chat.MapPost("/completions", CreateCompletion)
             .WithName("CreateChatCompletion")
             .WithSummary("Create a chat completion")
-            .WithDescription("Sends messages to the model and returns a complete response. Model is optional (uses default from config). Supports temperature, maxTokens, topP, and stopSequences.")
+            .WithDescription("""
+                **Stateless** Azure OpenAI chat completion. **`messages`** follow the usual chat roles (`system`, `user`, `assistant`).
+
+                **`model`** is optional: when omitted, the API uses the default deployment configured for this host.
+
+                **Tuning:** `temperature`, `maxTokens`, `topP`, `stopSequences` map to the underlying OpenAI options.
+
+                **Response:** `ChatCompletionResponse` with **`choices`**, **`usage`** token counts, and **`model`** echo.
+                """)
             .Produces<ChatCompletionResponse>()
             .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         chat.MapPost("/completions/stream", CreateStreamingCompletion)
             .WithName("CreateStreamingChatCompletion")
             .WithSummary("Create a streaming chat completion (SSE)")
-            .WithDescription("Streams the completion using Server-Sent Events. Each chunk contains partial content. Use stream=true in the request body.")
+            .WithDescription("""
+                Same request body as **`/completions`**, but the HTTP response is **`text/event-stream`**.
+
+                **Wire format:** repeated lines `data: {json}` where JSON is a **`ChatCompletionChunk`** (delta content in `choices[].delta.content`). The stream always ends with **`data: [DONE]`**.
+
+                **Clients:** use `EventSource` or manual `fetch` + ReadableStream; disable proxy buffering (`X-Accel-Buffering: no` is set on the response).
+                """)
             .Produces(StatusCodes.Status200OK, contentType: "text/event-stream")
             .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
     }
 

@@ -1,4 +1,5 @@
 using ATMET.AI.Api.Authentication;
+using ATMET.AI.Api.OpenApi;
 using ATMET.AI.Infrastructure.Configuration;
 using ATMET.AI.Infrastructure.Extensions;
 using FluentValidation;
@@ -163,20 +164,89 @@ public static class ServiceCollectionExtensions
                 Title = "ATMET AI Service API",
                 Version = "v1",
                 Description = """
-                    REST API encapsulating Azure AI Foundry SDK capabilities.
+                    National-scale orchestration API for **ATMET AI** (أتمت): **Azure AI Foundry** capabilities plus a **Supabase-backed citizen portal** surface.
 
-                    **Features:**
-                    - **Agents**: Create and manage persistent AI agents with threads, messages, runs, and file uploads
-                    - **Chat**: Azure OpenAI chat completions (sync and streaming)
-                    - **Deployments**: List and inspect model deployments (GPT-4, GPT-4o, etc.)
-                    - **Connections**: Azure resource connections (OpenAI, AI Search)
-                    - **Datasets**: Upload and manage datasets for training/inference
-                    - **Indexes**: Azure AI Search index definitions
+                    ---
 
-                    **Authentication**: All endpoints require an API key in the `X-Api-Key` header.
+                    ### Base path and versioning
+                    All integration endpoints are under **`/api/v1`**. The document version (`v1`) tracks the OpenAPI description; breaking HTTP changes should bump this path in future releases.
+
+                    ---
+
+                    ### Product surfaces (who uses what)
+                    | Area | Tags | Purpose |
+                    |------|------|---------|
+                    | **Azure AI Foundry proxy** | Agents, Chat, Deployments, Connections, Datasets, Indexes | Manage persistent agents, chat completions, project deployments/connections, datasets, and search index registrations against the configured Foundry project. |
+                    | **Citizen portal (MUBASHIR)** | Portal - …, Portal Chat | CRUD and workflows for **services**, **cases** (applications), **conversations**, **documents**, **forms**, **workflow steps**, **activity**, and **SSE agent chat**. Data is loaded from **PostgreSQL (Supabase)** via the service layer. |
+
+                    ---
+
+                    ### Authentication
+                    - **`X-Api-Key`** (required on **`/api/v1/*`**): shared secret issued by the platform team. Keys are configured server-side (`ApiKeys:Keys` in configuration). There is no OAuth2 flow on this API today—treat the key like a confidential integration credential.
+                    - **Authorization policies** in code are named `ApiReader` (read) and `ApiWriter` (mutations). **Currently any valid API key satisfies both**; the split exists for future key scoping.
+
+                    ---
+
+                    ### Portal context headers (citizen flows)
+                    Portal routes additionally rely on **caller-supplied identity and tenant headers** (UUID strings). Your BFF or trusted client should set these after your own session/auth validation:
+                    | Header | When | Meaning |
+                    |--------|------|---------|
+                    | `X-Portal-User-Id` | Most portal mutations and case-scoped reads | Authenticated citizen / profile id. |
+                    | `X-Portal-Entity-Id` | Catalog list, listing cases/conversations, portal chat | Tenant (government entity) id for multi-tenant isolation. |
+                    | `X-Portal-Language` | Optional on portal chat | `en` or `ar` for bilingual UX. |
+
+                    OpenAPI lists these per operation where applicable. **Service-by-id** catalog reads (`GET /portal/services/{serviceId}` and workflow) intentionally use **only route parameters** today.
+
+                    ---
+
+                    ### Rate limiting and caching
+                    - **`/api/v1/*`** uses a **fixed-window** rate limiter (`429 Too Many Requests` when exceeded). Limits are configurable under `RateLimiting` in application settings.
+                    - **Portal service catalog** GET endpoints may be **output-cached** briefly for performance (`PortalCatalog` policy).
+
+                    ---
+
+                    ### Errors and validation
+                    - **FluentValidation** failures return **`400`** with a **validation problem** payload (RFC 7807-style `application/problem+json` where configured).
+                    - **Not found** and domain errors map to **`404`** / **`400`** / **`500`** depending on exception type—see individual operation responses.
+                    - **Unauthorized** (`401`) when the API key is missing or invalid.
+
+                    ---
+
+                    ### Streaming (SSE)
+                    These endpoints return **`text/event-stream`** (Server-Sent Events). Each event is typically one line: `data: {json}` and the stream terminates with **`data: [DONE]`**:
+                    - `POST /api/v1/chat/completions/stream`
+                    - `POST /api/v1/portal/conversations/{conversationId}/chat`
+
+                    Clients should disable buffering on reverse proxies (`X-Accel-Buffering: no` is set by the API for streaming routes).
+
+                    ---
+
+                    ### Multipart uploads
+                    Use **`multipart/form-data`** for:
+                    - Agent file upload: `POST /api/v1/agents/files`
+                    - Dataset file/folder uploads under `/api/v1/datasets/upload/*`
+                    - Portal case document upload: `POST /api/v1/portal/cases/{caseId}/documents`
+
+                    ---
+
+                    ### Health and documentation
+                    - **Liveness / readiness**: `GET /health`, `GET /health/ready`, `GET /health/live`
+                    - **OpenAPI JSON**: `GET /swagger/v1/swagger.json`
+                    - **Interactive docs**: **`/scalar`** (recommended) or **`/swagger`**
+                    - **Root**: `GET /` returns a small JSON service card (no API key).
+
+                    ---
+
+                    ### Schema and naming
+                    JSON uses **camelCase** property names. **Enums** are serialized as strings where applicable. Nullable fields are omitted on write when null (`JsonSerializer` defaults).
+
+                    **Request/response DTOs** are documented via XML comments on the Core models; cross-check tag summaries above for business context.
                     """,
                 Contact = new() { Name = "ATMET AI Team", Email = "ai-team@atmet.ai" }
             });
+
+            options.DocumentFilter<AtmetOpenApiDocumentFilter>();
+            options.OperationFilter<AtmetPortalHeadersOperationFilter>();
 
             // Include XML comments from API and Core assemblies
             var apiXmlPath = Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
@@ -195,7 +265,15 @@ public static class ServiceCollectionExtensions
                 Name = "X-Api-Key",
                 Type = SecuritySchemeType.ApiKey,
                 In = ParameterLocation.Header,
-                Description = "API key for authentication. Pass in the X-Api-Key header."
+                Description = """
+                    Integration API key (shared secret). Send on **every** `/api/v1/*` request.
+
+                    **Header:** `X-Api-Key: <your-key>`
+
+                    Keys are provisioned in server configuration (`ApiKeys:Keys`). Store keys in a secret manager in production; rotate by updating configuration and redeploying.
+
+                    **Note:** The OpenAPI document applies this security scheme globally to versioned API operations. Portal routes still require portal context headers—see the main description.
+                    """
             });
 
             options.AddSecurityRequirement(document => new OpenApiSecurityRequirement

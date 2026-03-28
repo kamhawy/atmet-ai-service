@@ -1,8 +1,12 @@
+using ATMET.AI.Core.Models.Portal;
 using ATMET.AI.Core.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ATMET.AI.Api.Endpoints.Portal;
 
+/// <summary>
+/// Case document uploads and checklist (Supabase + storage).
+/// </summary>
 public static class PortalDocumentsEndpoints
 {
     public static void MapEndpoints(RouteGroupBuilder group)
@@ -10,26 +14,61 @@ public static class PortalDocumentsEndpoints
         var docs = group.MapGroup("/portal/cases/{caseId}/documents")
             .WithTags("Portal - Documents");
 
+        // Literal segment must be registered before `{docId}` so "checklist" is not captured as an id.
+        docs.MapGet("/checklist", GetDocumentChecklist)
+            .WithName("GetPortalDocumentChecklist")
+            .WithSummary("Get required documents checklist with upload status")
+            .WithDescription("""
+                Returns the **required document catalog** for the case’s service merged with **per-item upload status** (uploaded file id/name when satisfied).
+
+                **Business use:** render the “upload required documents” step and agent **`document_request`** cards.
+
+                **Headers:** `X-Portal-User-Id` (required).
+                """)
+            .Produces<List<DocumentChecklistItemResponse>>()
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .RequireAuthorization("ApiReader");
+
         docs.MapPost("/", UploadDocument)
             .WithName("UploadPortalDocument")
             .WithSummary("Upload a document for a case")
+            .WithDescription("""
+                **`multipart/form-data`** with a single file field. Optional query **`documentCatalogId`** ties the upload to a checklist row.
+
+                **Response:** `201 Created` with **`PortalDocumentResponse`** (includes storage URL and validation status).
+
+                **Headers:** `X-Portal-User-Id` (required).
+                """)
             .RequireAuthorization("ApiWriter")
             .DisableAntiforgery()
-            .Accepts<IFormFile>("multipart/form-data");
+            .Accepts<IFormFile>("multipart/form-data")
+            .Produces<PortalDocumentResponse>(StatusCodes.Status201Created)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
 
         docs.MapGet("/", GetDocuments)
             .WithName("GetPortalDocuments")
             .WithSummary("List documents for a case")
+            .WithDescription("""
+                Lists **all uploaded documents** for the case with metadata and validation flags.
+
+                **Headers:** `X-Portal-User-Id` (required).
+                """)
+            .Produces<List<PortalDocumentResponse>>()
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
             .RequireAuthorization("ApiReader");
 
         docs.MapGet("/{docId}", GetDocument)
             .WithName("GetPortalDocument")
             .WithSummary("Get document detail with signed download URL")
-            .RequireAuthorization("ApiReader");
+            .WithDescription("""
+                Returns **one document** including a **time-limited file URL** suitable for download or preview.
 
-        docs.MapGet("/checklist", GetDocumentChecklist)
-            .WithName("GetPortalDocumentChecklist")
-            .WithSummary("Get required documents checklist with upload status")
+                **Headers:** `X-Portal-User-Id` (required). **`404`** if not found.
+                """)
+            .Produces<PortalDocumentResponse>()
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
             .RequireAuthorization("ApiReader");
     }
 

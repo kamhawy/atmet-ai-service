@@ -1,8 +1,18 @@
 namespace ATMET.AI.Core.Models.Requests
 {
     /// <summary>
-    /// Request model aligned with Azure.AI.Agents.Persistent CreateAgent parameters.
+    /// Creates a **persistent agent** in the configured Azure AI Foundry project (Azure AI Agents Persistent API shape).
     /// </summary>
+    /// <param name="Model">Deployment name in the project (for example <c>gpt-4o</c>) the agent should run on.</param>
+    /// <param name="Name">Human-readable agent label for operators.</param>
+    /// <param name="Instructions">System / developer instructions (behavior, tone, tool usage hints).</param>
+    /// <param name="Metadata">Arbitrary string key-value metadata stored with the agent.</param>
+    /// <param name="Tools">Tool definitions (code interpreter, file search, function tools) as SDK-shaped objects.</param>
+    /// <param name="Description">Optional longer description for catalogs or admin UIs.</param>
+    /// <param name="Temperature">Sampling temperature for generations (model-dependent).</param>
+    /// <param name="TopP">Nucleus sampling (<c>top_p</c>).</param>
+    /// <param name="ResponseFormat">Optional response format constraint (for example JSON mode) when supported.</param>
+    /// <param name="ToolResources">Additional tool configuration (vector store ids, etc.).</param>
     public record CreateAgentRequest(
         string Model,
         string Name,
@@ -17,7 +27,7 @@ namespace ATMET.AI.Core.Models.Requests
     );
 
     /// <summary>
-    /// Request model aligned with Azure.AI.Agents.Persistent UpdateAgent parameters.
+    /// **Patch-style** update for an existing persistent agent (omit fields you do not want to change).
     /// </summary>
     public record UpdateAgentRequest(
         string? Name = null,
@@ -39,8 +49,12 @@ namespace ATMET.AI.Core.Models.Requests
     );
 
     /// <summary>
-    /// Request model aligned with Azure.AI.Agents.Persistent CreateMessage parameters.
+    /// Adds a **user**, **assistant**, or **system** message to a thread.
     /// </summary>
+    /// <param name="Role">One of <c>user</c>, <c>assistant</c>, or <c>system</c>.</param>
+    /// <param name="Content">Primary text content when not using structured <paramref name="ContentItems"/>.</param>
+    /// <param name="FileIds">Attached files previously uploaded via <c>POST /api/v1/agents/files</c>.</param>
+    /// <param name="ContentItems">Multi-part content blocks (text + file references) for rich messages.</param>
     public record CreateMessageRequest(
         string Role,
         string Content,
@@ -49,8 +63,11 @@ namespace ATMET.AI.Core.Models.Requests
     );
 
     /// <summary>
-    /// Content item for multi-part messages (text, file reference).
+    /// One **content part** inside a multi-part agent message.
     /// </summary>
+    /// <param name="Type">Discriminator, for example <c>text</c> or <c>image_file</c> per SDK conventions.</param>
+    /// <param name="Text">Plain text when <paramref name="Type"/> is textual.</param>
+    /// <param name="FileId">Reference to an uploaded agent file when applicable.</param>
     public record MessageContentItemRequest(
         string Type,
         string? Text = null,
@@ -58,8 +75,19 @@ namespace ATMET.AI.Core.Models.Requests
     );
 
     /// <summary>
-    /// Request model aligned with Azure.AI.Agents.Persistent CreateRun parameters.
+    /// Starts a **run**: the agent executes over the current thread messages until a terminal run status.
     /// </summary>
+    /// <param name="AgentId">Agent that should execute (must belong to the same project).</param>
+    /// <param name="Instructions">Optional per-run system instructions overriding defaults.</param>
+    /// <param name="Metadata">Run-scoped metadata for tracing.</param>
+    /// <param name="Stream">Forwarded to the Azure Agents SDK where supported (this REST endpoint returns a materialized <c>RunResponse</c>).</param>
+    /// <param name="Temperature">Per-run temperature override.</param>
+    /// <param name="TopP">Per-run top-p override.</param>
+    /// <param name="MaxPromptTokens">Cap on prompt tokens when supported.</param>
+    /// <param name="MaxCompletionTokens">Cap on completion tokens when supported.</param>
+    /// <param name="ParallelToolCalls">Whether parallel tool calls are allowed.</param>
+    /// <param name="OverrideModelName">Temporary model deployment override for this run.</param>
+    /// <param name="ResponseFormat">Response format hint for the completion leg of the run.</param>
     public record CreateRunRequest(
         string AgentId,
         string? Instructions = null,
@@ -101,8 +129,15 @@ namespace ATMET.AI.Core.Models.Requests
     );
 
     /// <summary>
-    /// Request model aligned with Azure.AI.OpenAI ChatCompletion parameters.
+    /// **Chat completion** request (Azure OpenAI shape) for <c>POST /api/v1/chat/completions</c>.
     /// </summary>
+    /// <param name="Model">Optional deployment name; server default is used when null.</param>
+    /// <param name="Messages">Ordered transcript including optional system priming.</param>
+    /// <param name="Temperature">Sampling temperature.</param>
+    /// <param name="MaxTokens">Upper bound on tokens to generate (legacy name; maps to service max completion tokens).</param>
+    /// <param name="Stream">Ignored for the non-streaming route; present for payload symmetry.</param>
+    /// <param name="TopP">Nucleus sampling.</param>
+    /// <param name="StopSequences">Optional stop sequences that truncate generation.</param>
     public record ChatCompletionRequest(
         string? Model,
         List<ChatMessage> Messages,
@@ -114,7 +149,7 @@ namespace ATMET.AI.Core.Models.Requests
     );
 
     /// <summary>
-    /// Chat message for completion request.
+    /// One **role/content** pair inside <see cref="ChatCompletionRequest.Messages"/>.
     /// </summary>
     public record ChatMessage(
         string Role,

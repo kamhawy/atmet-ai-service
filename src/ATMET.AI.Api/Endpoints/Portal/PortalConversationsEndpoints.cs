@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ATMET.AI.Api.Endpoints.Portal;
 
+/// <summary>
+/// Portal conversation threads (persisted chat) for the citizen UI and AI agent.
+/// </summary>
 public static class PortalConversationsEndpoints
 {
     public static void MapEndpoints(RouteGroupBuilder group)
@@ -14,26 +17,70 @@ public static class PortalConversationsEndpoints
         conversations.MapGet("/", GetConversations)
             .WithName("GetPortalConversations")
             .WithSummary("List conversations for the authenticated user")
+            .WithDescription("""
+                Returns **conversation summaries** for the user within the entity: title, linked case/service, last message preview, counts, timestamps.
+
+                **Business use:** chat history sidebar before opening **Portal Chat (SSE)**.
+
+                **Headers:** `X-Portal-User-Id` and `X-Portal-Entity-Id` (required).
+                """)
+            .Produces<List<PortalConversationSummaryResponse>>()
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
             .RequireAuthorization("ApiReader");
 
         conversations.MapPost("/", CreateConversation)
             .WithName("CreatePortalConversation")
             .WithSummary("Create a new conversation")
+            .WithDescription("""
+                Starts a **new thread**. Body (`CreateConversationRequest`): **`entityId`**, optional **`caseId`**, **`serviceId`**, **`title`**.
+
+                **Business use:** open a fresh AI-assisted session or attach chat to an existing case.
+
+                **Headers:** `X-Portal-User-Id` (required).
+                """)
+            .Produces<PortalConversationResponse>(StatusCodes.Status201Created)
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
             .RequireAuthorization("ApiWriter");
 
         conversations.MapGet("/{conversationId}", GetConversation)
             .WithName("GetPortalConversation")
             .WithSummary("Get conversation with all messages")
+            .WithDescription("""
+                Loads the **full thread** including **`messages`** (role, content, optional structured attachments) and persisted **`formData`** snapshot when present.
+
+                **Headers:** `X-Portal-User-Id` (required). **`404`** if not found or not owned.
+                """)
+            .Produces<PortalConversationResponse>()
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
             .RequireAuthorization("ApiReader");
 
         conversations.MapDelete("/{conversationId}", DeleteConversation)
             .WithName("DeletePortalConversation")
             .WithSummary("Delete a conversation")
+            .WithDescription("""
+                Permanently removes the conversation for this user.
+
+                **Headers:** `X-Portal-User-Id` (required). **`204 No Content`** on success.
+                """)
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
             .RequireAuthorization("ApiWriter");
 
         conversations.MapPost("/{conversationId}/messages", SendMessage)
             .WithName("SendPortalMessage")
             .WithSummary("Send a message in a conversation")
+            .WithDescription("""
+                Appends a **non-streaming** message (for example operator messages or simple chat). Body: **`content`**, optional **`type`**.
+
+                For **AI agent streaming**, prefer **`POST /portal/conversations/{conversationId}/chat`** (SSE).
+
+                **Headers:** `X-Portal-User-Id` (required).
+                """)
+            .Produces<PortalMessageResponse>()
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
             .RequireAuthorization("ApiWriter");
     }
 

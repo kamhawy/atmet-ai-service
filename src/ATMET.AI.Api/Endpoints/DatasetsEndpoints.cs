@@ -35,22 +35,29 @@ public static class DatasetsEndpoints
         datasets.MapGet("/", ListDatasets)
             .WithName("ListDatasets")
             .WithSummary("List latest versions of all datasets")
-            .WithDescription("Returns the latest version of each dataset in the project.")
-            .Produces<List<DatasetResponse>>();
+            .WithDescription("""
+                Returns the **latest version** per dataset name registered in the project.
+
+                **Business use:** populate training job pickers or data governance dashboards.
+                """)
+            .Produces<List<DatasetResponse>>()
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
 
         datasets.MapGet("/{name}/versions", ListDatasetVersions)
             .WithName("ListDatasetVersions")
             .WithSummary("List all versions of a dataset")
-            .WithDescription("Returns all versions of a dataset by name.")
+            .WithDescription("Returns **all versions** (immutable lineage) for a dataset logical name.")
             .Produces<List<DatasetResponse>>()
-            .ProducesProblem(StatusCodes.Status404NotFound);
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
 
         datasets.MapGet("/{name}/versions/{version}", GetDataset)
             .WithName("GetDataset")
             .WithSummary("Get a specific dataset version")
-            .WithDescription("Returns dataset metadata including description, connectionName, isReference, and tags.")
+            .WithDescription("Returns **metadata** for one `(name, version)` pair: storage hints, tags, connection, reference flags.")
             .Produces<DatasetResponse>()
-            .ProducesProblem(StatusCodes.Status404NotFound);
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
 
         datasets.MapGet("/{name}/versions/{version}/credentials", GetDatasetCredentials)
             .WithName("GetDatasetCredentials")
@@ -58,7 +65,8 @@ public static class DatasetsEndpoints
             .WithDescription("Returns SAS URI and expiration for direct blob storage access. Use for data loading in training or inference.")
             .RequireAuthorization("ApiWriter")
             .Produces<DatasetCredentialsResponse>()
-            .ProducesProblem(StatusCodes.Status404NotFound);
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
 
         datasets.MapDelete("/{name}/versions/{version}", DeleteDataset)
             .WithName("DeleteDataset")

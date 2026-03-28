@@ -3,11 +3,14 @@ using System.Text.Json;
 namespace ATMET.AI.Core.Models.Portal;
 
 // ==================================================================================
-// Portal Response DTOs
+// Portal Response DTOs — returned by `/api/v1/portal/*` (camelCase on the wire).
 // ==================================================================================
 
 #region Services
 
+/// <summary>
+/// Lightweight row for **service catalog** lists (bilingual labels, SLA, category).
+/// </summary>
 public record PortalServiceResponse(
     string Id,
     string Name,
@@ -19,6 +22,9 @@ public record PortalServiceResponse(
     bool IsActive
 );
 
+/// <summary>
+/// Full service definition for **wizard setup**, including JSON blobs for dynamic UI and AI.
+/// </summary>
 public record PortalServiceDetailResponse(
     string Id,
     string Name,
@@ -33,6 +39,9 @@ public record PortalServiceDetailResponse(
     JsonElement? Intents
 );
 
+/// <summary>
+/// Workflow metadata bound to a service (versioned definition + opaque config).
+/// </summary>
 public record PortalServiceWorkflowResponse(
     string? WorkflowId,
     string? WorkflowName,
@@ -46,6 +55,9 @@ public record PortalServiceWorkflowResponse(
 
 #region Cases
 
+/// <summary>
+/// Case summary for **lists** (“My applications”).
+/// </summary>
 public record PortalCaseResponse(
     string Id,
     string ReferenceNumber,
@@ -62,6 +74,9 @@ public record PortalCaseResponse(
     DateTimeOffset UpdatedAt
 );
 
+/// <summary>
+/// Case **detail** including embedded workflow snapshot for rich detail screens.
+/// </summary>
 public record PortalCaseDetailResponse(
     string Id,
     string ReferenceNumber,
@@ -84,6 +99,9 @@ public record PortalCaseDetailResponse(
 
 #region Conversations
 
+/// <summary>
+/// One row in the **conversation list** UI.
+/// </summary>
 public record PortalConversationSummaryResponse(
     string Id,
     string? Title,
@@ -97,6 +115,9 @@ public record PortalConversationSummaryResponse(
     DateTimeOffset UpdatedAt
 );
 
+/// <summary>
+/// Full thread including **messages** and optional persisted **formData** snapshot.
+/// </summary>
 public record PortalConversationResponse(
     string Id,
     string? Title,
@@ -109,6 +130,9 @@ public record PortalConversationResponse(
     DateTimeOffset UpdatedAt
 );
 
+/// <summary>
+/// A single persisted **chat message** (citizen, assistant, or system).
+/// </summary>
 public record PortalMessageResponse(
     string Id,
     string Role,
@@ -124,6 +148,9 @@ public record PortalMessageResponse(
 
 #region Documents
 
+/// <summary>
+/// Uploaded file metadata plus a **downloadable URL** (often signed / time-limited).
+/// </summary>
 public record PortalDocumentResponse(
     string Id,
     string CaseId,
@@ -137,6 +164,9 @@ public record PortalDocumentResponse(
     DateTimeOffset CreatedAt
 );
 
+/// <summary>
+/// One **required document** slot from the catalog with fulfillment status for UX checklists.
+/// </summary>
 public record DocumentChecklistItemResponse(
     string DocumentCatalogId,
     string NameEn,
@@ -151,6 +181,9 @@ public record DocumentChecklistItemResponse(
 
 #region Forms
 
+/// <summary>
+/// **Form schema** and current values for rendering and autosave.
+/// </summary>
 public record PortalFormResponse(
     JsonElement? FormSchema,
     JsonElement? CurrentData,
@@ -158,12 +191,18 @@ public record PortalFormResponse(
     string? CaseId
 );
 
+/// <summary>
+/// Result of a **validate** call: validity, field errors, optional eligibility JSON.
+/// </summary>
 public record FormValidationResponse(
     bool IsValid,
     List<FormValidationError>? Errors,
     JsonElement? EligibilityResult = null
 );
 
+/// <summary>
+/// Single validation error keyed by **field** id/path.
+/// </summary>
 public record FormValidationError(
     string Field,
     string Message
@@ -173,6 +212,9 @@ public record FormValidationError(
 
 #region Workflow
 
+/// <summary>
+/// Computed **workflow progress** for a case.
+/// </summary>
 public record WorkflowStateResponse(
     string? CurrentStepId,
     int ProgressPercent,
@@ -181,6 +223,9 @@ public record WorkflowStateResponse(
     List<WorkflowStepStatusResponse> Steps
 );
 
+/// <summary>
+/// Status of an individual **workflow step** (pending, active, completed, …).
+/// </summary>
 public record WorkflowStepStatusResponse(
     string Id,
     string Title,
@@ -195,6 +240,9 @@ public record WorkflowStepStatusResponse(
 
 #region Activity
 
+/// <summary>
+/// One **audit / activity** entry for timelines.
+/// </summary>
 public record ActivityEntryResponse(
     string Id,
     string ActionType,

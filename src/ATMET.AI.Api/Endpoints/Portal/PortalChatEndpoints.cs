@@ -27,13 +27,24 @@ public static class PortalChatEndpoints
         chat.MapPost("", ProcessMessage)
             .WithName("PortalChat")
             .WithSummary("Send a message and stream AI agent response (SSE)")
-            .WithDescription(
-                "Sends a user message to the portal AI agent. The agent processes the message, " +
-                "optionally calls tools (create case, update form, etc.), and streams structured " +
-                "responses as Server-Sent Events. Event types: typing, tool_call, message, done, error.")
+            .WithDescription("""
+                **Primary integration point** for the MUBASHIR AI experience. Accepts a **`PortalChatMessage`** JSON body (discriminated by **`type`**) and returns **`text/event-stream`**.
+
+                **Event model (`PortalChatEvent`):**
+                - **`eventType`** — `typing` | `message` | `tool_call` | `done` | `error`
+                - **`message`** — populated for `message` events (see **`PortalMessageTypes`** for `type` values such as `service_catalog`, `form_request`, `document_request`, …)
+                - **`toolName` / `toolStatus`** — for long-running tool execution visibility (`calling` | `completed`)
+
+                **Tooling:** the agent may invoke server-side tools (create case, submit form, upload metadata, etc.); clients should render structured **`data`** JSON on each message.
+
+                **Stream format:** each SSE chunk is `data: {json}`; ends with `data: [DONE]`.
+
+                **Headers:** `X-Portal-User-Id`, `X-Portal-Entity-Id`, optional `X-Portal-Language` (`en`/`ar`).
+                """)
             .Produces(StatusCodes.Status200OK, contentType: "text/event-stream")
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
     }
 

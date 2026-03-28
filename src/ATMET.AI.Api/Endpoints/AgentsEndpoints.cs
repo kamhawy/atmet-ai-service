@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ATMET.AI.Api.Endpoints;
 
 /// <summary>
-/// Endpoints for managing Azure AI Agents
+/// Azure AI Foundry **persistent agents** surface: agents, threads, messages, runs, and file uploads (threads map 1:1 with SDK concepts).
 /// </summary>
 public static class AgentsEndpoints
 {

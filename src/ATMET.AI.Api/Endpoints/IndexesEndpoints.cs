@@ -26,22 +26,29 @@ public static class IndexesEndpoints
         indexes.MapGet("/", ListIndexes)
             .WithName("ListIndexes")
             .WithSummary("List all indexes")
-            .WithDescription("Returns the latest version of each index in the project.")
-            .Produces<List<IndexResponse>>();
+            .WithDescription("""
+                Lists **latest versions** of Azure AI Search index registrations for the project.
+
+                **Business use:** verify knowledge bases wired into agents or RAG pipelines.
+                """)
+            .Produces<List<IndexResponse>>()
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
 
         indexes.MapGet("/{name}/versions", ListIndexVersions)
             .WithName("ListIndexVersions")
             .WithSummary("List all versions of an index")
-            .WithDescription("Returns all versions of an index by name.")
+            .WithDescription("Returns **version history** for a registered search index definition.")
             .Produces<List<IndexResponse>>()
-            .ProducesProblem(StatusCodes.Status404NotFound);
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
 
         indexes.MapGet("/{name}/versions/{version}", GetIndex)
             .WithName("GetIndex")
             .WithSummary("Get a specific index version")
-            .WithDescription("Returns index metadata including connectionName, indexName, description, indexType, tags, and fieldMapping.")
+            .WithDescription("Returns **connection**, remote **indexName**, **fieldMapping**, tags, and type metadata for automation pipelines.")
             .Produces<IndexResponse>()
-            .ProducesProblem(StatusCodes.Status404NotFound);
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
 
         indexes.MapDelete("/{name}/versions/{version}", DeleteIndex)
             .WithName("DeleteIndex")

@@ -17,16 +17,28 @@ public static class DeploymentsEndpoints
         deployments.MapGet("/", ListDeployments)
             .WithName("ListDeployments")
             .WithSummary("List all AI model deployments")
-            .WithDescription("Returns all model deployments (e.g., GPT-4, GPT-4o) available in the project. Optionally filter by publisher or type.")
+            .WithDescription("""
+                Enumerates **model deployments** in the connected Foundry project—use this to discover valid **`model`** strings for chat and agents.
+
+                **Query filters:** optional **`modelPublisher`** and **`modelType`** narrow results when the backing API supports them.
+
+                **Business use:** integration tests, deployment pickers in admin tools, capacity verification.
+                """)
             .Produces<List<DeploymentResponse>>()
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         deployments.MapGet("/{deploymentName}", GetDeployment)
             .WithName("GetDeployment")
             .WithSummary("Get deployment details by name")
-            .WithDescription("Returns metadata for a specific model deployment including model name, publisher, capabilities, and SKU.")
+            .WithDescription("""
+                Fetches **SKU, capabilities, publisher, status** for a single deployment by its resource name.
+
+                **Path:** `deploymentName` is the deployment identifier as shown in Azure AI Foundry / Azure OpenAI (not always identical to the base model name).
+                """)
             .Produces<DeploymentResponse>()
             .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
     }
 
