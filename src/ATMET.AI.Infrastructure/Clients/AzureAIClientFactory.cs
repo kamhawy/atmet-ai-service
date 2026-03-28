@@ -1,4 +1,4 @@
-﻿using ATMET.AI.Infrastructure.Configuration;
+using ATMET.AI.Infrastructure.Configuration;
 using Azure.AI.Agents.Persistent;
 using Azure.AI.Projects;
 using Azure.Core;
@@ -83,7 +83,8 @@ namespace ATMET.AI.Infrastructure.Clients
                     "Using User-Assigned Managed Identity: {ClientId}",
                     _options.ManagedIdentityClientId);
 
-                return new ManagedIdentityCredential(_options.ManagedIdentityClientId);
+                return new ManagedIdentityCredential(
+                    ManagedIdentityId.FromUserAssignedClientId(_options.ManagedIdentityClientId));
             }
 
             _logger.LogInformation("Using Default Azure Credential (System-Assigned MI or local dev)");

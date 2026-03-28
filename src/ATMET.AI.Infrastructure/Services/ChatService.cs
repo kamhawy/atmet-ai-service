@@ -171,7 +171,8 @@ public class ChatService : IChatService
             var endpoint = new Uri($"https://{uri.Host}");
 
             var credential = !string.IsNullOrEmpty(_options.ManagedIdentityClientId)
-                ? (Azure.Core.TokenCredential)new ManagedIdentityCredential(_options.ManagedIdentityClientId)
+                ? (Azure.Core.TokenCredential)new ManagedIdentityCredential(
+                    ManagedIdentityId.FromUserAssignedClientId(_options.ManagedIdentityClientId))
                 : new DefaultAzureCredential();
 
             _logger.LogInformation(

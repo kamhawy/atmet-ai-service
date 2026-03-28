@@ -14,7 +14,8 @@ public static class PortalDocumentsEndpoints
             .WithName("UploadPortalDocument")
             .WithSummary("Upload a document for a case")
             .RequireAuthorization("ApiWriter")
-            .DisableAntiforgery();
+            .DisableAntiforgery()
+            .Accepts<IFormFile>("multipart/form-data");
 
         docs.MapGet("/", GetDocuments)
             .WithName("GetPortalDocuments")
@@ -35,7 +36,7 @@ public static class PortalDocumentsEndpoints
     private static async Task<IResult> UploadDocument(
         string caseId,
         [FromHeader(Name = "X-Portal-User-Id")] string userId,
-        [FromForm] IFormFile file,
+        IFormFile file,
         [FromQuery] string? documentCatalogId,
         [FromServices] IPortalDocumentService service,
         CancellationToken ct)

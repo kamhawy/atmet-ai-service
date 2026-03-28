@@ -31,7 +31,8 @@ public static class WebApplicationExtensions
         app.MapScalarApiReference(options =>
         {
             options.WithTitle("ATMET AI Service API");
-            options.WithOpenApiRoutePattern("/swagger/v1/swagger.json");
+            // Swashbuckle serves at /swagger/{documentName}/swagger.json — use placeholder so Scalar resolves "v1" correctly.
+            options.WithOpenApiRoutePattern("/swagger/{documentName}/swagger.json");
         });
 
         app.UseSecurityHeaders();
