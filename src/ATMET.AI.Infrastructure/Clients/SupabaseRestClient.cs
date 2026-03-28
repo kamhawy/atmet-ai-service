@@ -35,11 +35,9 @@ public class SupabaseRestClient
         _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        // Configure base headers for all requests
-        _http.BaseAddress = new Uri(_options.Url.TrimEnd('/'));
-        _http.DefaultRequestHeaders.Add("apikey", _options.ServiceRoleKey);
-        _http.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", _options.ServiceRoleKey);
+        // BaseAddress, apikey, and Authorization headers are configured
+        // in the ConfigureHttpClient callback (ServiceCollectionExtensions)
+        // so they are set BEFORE the resilience handler pipeline processes requests.
     }
 
     // ==================================================================================

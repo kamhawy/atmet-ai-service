@@ -10,6 +10,8 @@ using ATMET.AI.Infrastructure.Configuration;
 using ATMET.AI.Infrastructure.HealthChecks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using System.Net.Http.Headers;
 
 public static class ServiceCollectionExtensions
 {
@@ -47,7 +49,11 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient<SupabaseRestClient>()
             .ConfigureHttpClient((sp, client) =>
             {
-                // Base config is handled in SupabaseRestClient constructor
+                var opts = sp.GetRequiredService<IOptions<SupabaseOptions>>().Value;
+                client.BaseAddress = new Uri(opts.Url.TrimEnd('/'));
+                client.DefaultRequestHeaders.Add("apikey", opts.AnonKey);
+                client.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", opts.ServiceRoleKey);
             })
             .AddStandardResilienceHandler();
 

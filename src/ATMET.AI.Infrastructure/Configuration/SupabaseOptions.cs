@@ -13,7 +13,12 @@ public class SupabaseOptions
     public string Url { get; set; } = string.Empty;
 
     /// <summary>
-    /// Service Role Key — bypasses Row Level Security. Use server-side only.
+    /// Anon (public) key — used as the apikey header for PostgREST routing.
+    /// </summary>
+    public string AnonKey { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Service Role Key — bypasses Row Level Security. Used as Bearer token.
     /// </summary>
     public string ServiceRoleKey { get; set; } = string.Empty;
 
