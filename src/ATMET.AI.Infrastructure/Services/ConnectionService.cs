@@ -32,12 +32,12 @@ public class ConnectionService : IConnectionService
 
             var connections = new List<ConnectionResponse>();
 
-            ConnectionType? type = connectionType != null
-                ? Enum.Parse<ConnectionType>(connectionType)
-                : null;
+            // ConnectionType? type = connectionType != null
+            //     ? Enum.Parse<ConnectionType>(connectionType)
+            //     : null;
 
             var connectionPages = _projectClient.Connections.GetConnectionsAsync(
-                connectionType: type ?? ConnectionType.AzureStorageAccount,
+                connectionType: ConnectionType.AzureStorageAccount,
                 cancellationToken: cancellationToken);
 
             await foreach (var connection in connectionPages)
