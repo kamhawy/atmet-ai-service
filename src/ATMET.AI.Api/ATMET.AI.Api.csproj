@@ -12,15 +12,15 @@
 
   <ItemGroup>
     <!-- Azure AI SDK Packages -->
-    <PackageReference Include="Azure.AI.Projects" Version="1.1.0" />
-    <PackageReference Include="Azure.AI.Agents.Persistent" Version="1.1.0" />
-    <PackageReference Include="Azure.AI.OpenAI" Version="2.1.0" />
-    <PackageReference Include="Azure.Identity" Version="1.19.0" />
+    <PackageReference Include="Azure.AI.Projects" Version="2.0.0" />
+    <PackageReference Include="Azure.AI.Agents.Persistent" Version="1.2.0-beta.10" />
+    <PackageReference Include="Azure.AI.OpenAI" Version="2.9.0-beta.1" />
+    <PackageReference Include="Azure.Identity" Version="1.20.0" />
     
     <!-- ASP.NET Core Packages -->
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.4.0" />
-    <PackageReference Include="Scalar.AspNetCore" Version="2.13.16" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.13.18" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
     
     <!-- Observability -->
@@ -29,7 +29,7 @@
     <PackageReference Include="Serilog.Sinks.ApplicationInsights" Version="5.0.0" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
     <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
-    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="3.0.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="3.1.0" />
    
     <!-- Health Checks -->
     <PackageReference Include="AspNetCore.HealthChecks.Uris" Version="9.0.0" />

@@ -39,10 +39,11 @@ public class PortalWorkflowService : IPortalWorkflowService
         if (config == null) return null;
 
         // Extract steps from workflow config
-        var steps = ExtractSteps(config.Value);
-        if (steps.Count == 0) return null;
+        var stages = ExtractWorkflowStages(config.Value);
+        if (stages.Count == 0) return null;
 
         var currentStepId = caseRow.GetProp("current_step");
+        var currentStep = currentStepId != null ? GetStepInfo(stages, currentStepId) : null;
 
         // Get execution log to determine completed steps
         var execLogs = await _db.GetAsync<JsonElement>("workflow_execution_log",
@@ -64,44 +65,51 @@ public class PortalWorkflowService : IPortalWorkflowService
 
         // Build step status list
         bool foundActive = false;
-        var stepStatuses = steps.Select(s =>
+        var stepStatuses = new List<WorkflowStepStatusResponse>();
+
+        foreach (var stage in stages)
         {
-            string status;
-            DateTimeOffset? completedAt = null;
+            stepStatuses.AddRange(stage.Steps.Select(s =>
+            {
+                string status;
+                DateTimeOffset? completedAt = null;
 
-            if (completedSteps.Contains(s.Id))
-            {
-                status = "completed";
-                completedAtMap.TryGetValue(s.Id, out completedAt);
-            }
-            else if (!foundActive && (currentStepId == null || s.Id == currentStepId))
-            {
-                status = "active";
-                foundActive = true;
-            }
-            else
-            {
-                status = foundActive ? "pending" : "completed"; // Steps before active are completed
-            }
+                if (completedSteps.Contains(s.Id))
+                {
+                    status = "completed";
+                    completedAtMap.TryGetValue(s.Id, out completedAt);
+                }
+                else if (!foundActive && (currentStepId == null || s.Id == currentStepId))
+                {
+                    status = "active";
+                    foundActive = true;
+                }
+                else
+                {
+                    status = foundActive ? "pending" : "completed"; // Steps before active are completed
+                }
 
-            return new WorkflowStepStatusResponse(
-                Id: s.Id,
-                Title: s.Title,
-                TitleAr: s.TitleAr,
-                Description: s.Description,
-                DescriptionAr: s.DescriptionAr,
-                Status: status,
-                CompletedAt: completedAt
-            );
-        }).ToList();
+                return new WorkflowStepStatusResponse(
+                    Id: s.Id,
+                    Title: s.Title,
+                    TitleAr: s.TitleAr,
+                    Description: s.Description,
+                    DescriptionAr: s.DescriptionAr,
+                    Status: status,
+                    CompletedAt: completedAt
+                );
+            }));
+
+            if (foundActive) break;
+        }
 
         var completedCount = stepStatuses.Count(s => s.Status == "completed");
-        var progressPercent = steps.Count > 0 ? (int)(completedCount * 100.0 / steps.Count) : 0;
+        var progressPercent = stepStatuses.Count > 0 ? (int)(completedCount * 100.0 / stepStatuses.Count) : 0;
 
         return new WorkflowStateResponse(
-            CurrentStepId: currentStepId ?? steps.FirstOrDefault(s => !completedSteps.Contains(s.Id))?.Id,
+            CurrentStepId: currentStepId ?? stages.SelectMany(s => s.Steps).FirstOrDefault(s => !completedSteps.Contains(s.Id))?.Id,
             ProgressPercent: progressPercent,
-            TotalSteps: steps.Count,
+            TotalSteps: stepStatuses.Count,
             CompletedSteps: completedCount,
             Steps: stepStatuses
         );
@@ -133,7 +141,7 @@ public class PortalWorkflowService : IPortalWorkflowService
             ["completed_at"] = DateTimeOffset.UtcNow
         }, ct);
 
-        // Determine next step
+        // Determine next step (same stage/step ordering as GetWorkflowStateAsync)
         var workflowVersionId = caseRow.GetProp("workflow_version_id");
         string? nextStepId = null;
         if (workflowVersionId != null)
@@ -142,10 +150,18 @@ public class PortalWorkflowService : IPortalWorkflowService
                 select: "config", cancellationToken: ct);
             if (ver.ValueKind != JsonValueKind.Undefined)
             {
-                var steps = ExtractSteps(ver.GetJsonProp("config")!.Value);
-                var currentIndex = steps.FindIndex(s => s.Id == stepId);
-                if (currentIndex >= 0 && currentIndex < steps.Count - 1)
-                    nextStepId = steps[currentIndex + 1].Id;
+                var config = ver.GetJsonProp("config");
+                if (config != null)
+                {
+                    var stages = ExtractWorkflowStages(config.Value);
+                    if (stages.Count > 0 && GetStepInfo(stages, stepId) != null)
+                    {
+                        var linearSteps = stages.SelectMany(st => st.Steps).ToList();
+                        var idx = linearSteps.FindIndex(s => s.Id == stepId);
+                        if (idx >= 0 && idx < linearSteps.Count - 1)
+                            nextStepId = linearSteps[idx + 1].Id;
+                    }
+                }
             }
         }
 
@@ -169,39 +185,52 @@ public class PortalWorkflowService : IPortalWorkflowService
         return (await GetWorkflowStateAsync(caseId, userId, ct))!;
     }
 
-    private record StepInfo(string Id, string Title, string? TitleAr, string? Description, string? DescriptionAr);
-
-    private static List<StepInfo> ExtractSteps(JsonElement config)
+    public static List<StageInfo> ExtractWorkflowStages(JsonElement config)
     {
-        var steps = new List<StepInfo>();
+        var stages = new List<StageInfo>();
 
         // Try config.stages[] pattern (WorkflowConfig structure)
-        if (config.TryGetProperty("stages", out var stages) && stages.ValueKind == JsonValueKind.Array)
+        if (config.TryGetProperty("stages", out var stagesEl) && stagesEl.ValueKind == JsonValueKind.Array)
         {
-            foreach (var stage in stages.EnumerateArray())
+            foreach (var stage in stagesEl.EnumerateArray())
             {
                 var id = stage.GetProp("id") ?? stage.GetProp("stageId") ?? Guid.NewGuid().ToString();
                 var title = stage.GetProp("name") ?? stage.GetProp("title") ?? id;
                 var titleAr = stage.GetProp("name_ar") ?? stage.GetProp("nameAr");
                 var desc = stage.GetProp("description");
                 var descAr = stage.GetProp("description_ar") ?? stage.GetProp("descriptionAr");
-                steps.Add(new StepInfo(id, title, titleAr, desc, descAr));
-            }
-        }
-        // Try config.steps[] pattern
-        else if (config.TryGetProperty("steps", out var stepsEl) && stepsEl.ValueKind == JsonValueKind.Array)
-        {
-            foreach (var step in stepsEl.EnumerateArray())
-            {
-                var id = step.GetProp("id") ?? step.GetProp("stepId") ?? Guid.NewGuid().ToString();
-                var title = step.GetProp("name") ?? step.GetProp("title") ?? id;
-                var titleAr = step.GetProp("name_ar") ?? step.GetProp("nameAr");
-                var desc = step.GetProp("description");
-                var descAr = step.GetProp("description_ar") ?? step.GetProp("descriptionAr");
-                steps.Add(new StepInfo(id, title, titleAr, desc, descAr));
+
+                var stageSteps = new List<StepInfo>();
+
+                if (stage.TryGetProperty("steps", out var stageStepsEl) && stageStepsEl.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var step in stageStepsEl.EnumerateArray())
+                    {
+                        var stepId = step.GetProp("id") ?? step.GetProp("stepId") ?? Guid.NewGuid().ToString();
+                        var stepTitle = step.GetProp("name") ?? step.GetProp("title") ?? stepId;
+                        var stepTitleAr = step.GetProp("name_ar") ?? step.GetProp("nameAr");
+                        var stepDesc = step.GetProp("description");
+                        var stepDescAr = step.GetProp("description_ar") ?? step.GetProp("descriptionAr");
+                        var stepType = step.GetProp("type");
+                        var stepOrder = step.GetIntProp("order") ?? 1;
+
+                        stageSteps.Add(new StepInfo(stepId, stepTitle, stepTitleAr, stepDesc, stepDescAr, stepOrder, stepType));
+                    }
+                }
+
+                stages.Add(new StageInfo(id, title, titleAr, desc, descAr, stageSteps));
             }
         }
 
-        return steps;
+        return stages;
+    }
+
+    public static StepInfo? GetStepInfo(IEnumerable<StageInfo> stages, string stepId)
+    {
+        return stages.SelectMany(stage => stage.Steps).OrderBy(step => step.Order).FirstOrDefault(step => step.Id == stepId);
     }
 }
+
+public record StageInfo(string Id, string Title, string? TitleAr, string? Description, string? DescriptionAr, IEnumerable<StepInfo> Steps);
+
+public record StepInfo(string Id, string Title, string? TitleAr, string? Description, string? DescriptionAr, int Order, string? Type);

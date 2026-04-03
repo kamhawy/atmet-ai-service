@@ -1,3 +1,4 @@
+
 using ATMET.AI.Core.Exceptions;
 using ATMET.AI.Core.Models.Portal;
 using ATMET.AI.Core.Services;
@@ -207,9 +208,8 @@ public class PortalAgentService : IPortalAgentService
     private async Task<ConversationContext> BuildConversationContextAsync(
         string conversationId, string userId, string entityId, CancellationToken ct)
     {
-        var conv = await _conversationService.GetConversationAsync(conversationId, userId, ct);
-        if (conv == null)
-            throw new NotFoundException($"Conversation {conversationId} not found");
+        var conv = await _conversationService.GetConversationAsync(conversationId, userId, ct)
+            ?? throw new NotFoundException($"Conversation {conversationId} not found");
 
         PortalCaseDetailResponse? caseDetail = null;
         PortalServiceDetailResponse? serviceDetail = null;
@@ -219,6 +219,7 @@ public class PortalAgentService : IPortalAgentService
         if (conv.CaseId != null)
         {
             caseDetail = await _caseService.GetCaseAsync(conv.CaseId, userId, ct);
+
             if (caseDetail != null)
             {
                 workflowState = await _workflowService.GetWorkflowStateAsync(conv.CaseId, userId, ct);
