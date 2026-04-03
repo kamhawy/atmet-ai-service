@@ -36,14 +36,18 @@ public class ConnectionService : IConnectionService
             //     ? Enum.Parse<ConnectionType>(connectionType)
             //     : null;
 
-            var connectionPages = _projectClient.Connections.GetConnectionsAsync(
-                connectionType: ConnectionType.AzureStorageAccount,
-                cancellationToken: cancellationToken);
+            // var connectionPages = await _projectClient.Connections.GetConnectionsAsync(
+            //     connectionType: ConnectionType.AzureStorageAccount,
+            //     cancellationToken: cancellationToken);
 
-            await foreach (var connection in connectionPages)
-            {
-                connections.Add(MapToConnectionResponse(connection));
-            }
+            // await foreach (var connection in connectionPages)
+            // {
+            //     connections.Add(MapToConnectionResponse(connection));
+            // }
+
+            var connection = await _projectClient.Connections.GetDefaultConnectionAsync(ConnectionType.AzureAISearch);
+
+            connections.Add(MapToConnectionResponse(connection));
 
             _logger.LogInformation("Retrieved {Count} connections", connections.Count);
             return connections;
