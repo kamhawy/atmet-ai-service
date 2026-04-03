@@ -31,12 +31,13 @@ public class ConnectionService : IConnectionService
             _logger.LogInformation("Listing connections with type: {Type}", connectionType);
 
             var connections = new List<ConnectionResponse>();
+
             ConnectionType? type = connectionType != null
                 ? Enum.Parse<ConnectionType>(connectionType)
                 : null;
 
             var connectionPages = _projectClient.Connections.GetConnectionsAsync(
-                connectionType: type,
+                connectionType: type ?? default,
                 cancellationToken: cancellationToken);
 
             await foreach (var connection in connectionPages)
