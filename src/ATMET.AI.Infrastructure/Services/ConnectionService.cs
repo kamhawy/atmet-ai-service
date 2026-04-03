@@ -37,7 +37,7 @@ public class ConnectionService : IConnectionService
                 : null;
 
             var connectionPages = _projectClient.Connections.GetConnectionsAsync(
-                connectionType: type ?? default,
+                connectionType: type ?? ConnectionType.AzureStorageAccount,
                 cancellationToken: cancellationToken);
 
             await foreach (var connection in connectionPages)
