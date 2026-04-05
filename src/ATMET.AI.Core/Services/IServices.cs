@@ -31,6 +31,7 @@ public interface IAgentService
     Task<List<RunResponse>> ListRunsAsync(string threadId, int? limit = null, string? order = null, CancellationToken cancellationToken = default);
 
     // File operations — use Stream to avoid ASP.NET dependency in Core layer
+    Task<FileResponse> AddDocumentToAgentAsync(string agentId, Stream fileStream, string fileName, CancellationToken cancellationToken = default);
     Task<FileResponse> UploadFileAsync(Stream fileStream, string fileName, CancellationToken cancellationToken = default);
     Task<FileResponse> GetFileAsync(string fileId, CancellationToken cancellationToken = default);
     Task DeleteFileAsync(string fileId, CancellationToken cancellationToken = default);

@@ -17,6 +17,7 @@ namespace ATMET.AI.Infrastructure.Configuration
         public string? AzureOpenAIEndpoint { get; set; }
         public bool EnableTelemetry { get; set; } = true;
         public string DefaultModelDeployment { get; set; } = "gpt-4o";
+        public string AgentId { get; set; } = "tax-agent";
         public int RequestTimeoutSeconds { get; set; } = 120;
         public int MaxRetryAttempts { get; set; } = 3;
     }

@@ -527,6 +527,58 @@ public class AgentService : IAgentService
     // File Operations
     // ====================================================================
 
+    /// <summary>
+    /// Adds a new document to an agent's existing vector store,
+    /// making it available for the agent's file search tool
+    /// on the next conversation run.
+    /// </summary>
+    public async Task<FileResponse> AddDocumentToAgentAsync(
+        string agentId,
+        Stream fileStream,
+        string fileName,
+        CancellationToken cancellationToken = default)
+    {
+        // 1. Get the agent's vector store
+        var agent = await _agentsClient.Administration.GetAgentAsync(agentId, cancellationToken);
+        var vectorStoreId = agent.Value.ToolResources.FileSearch.VectorStoreIds
+            .FirstOrDefault()
+            ?? throw new InvalidOperationException("Agent has no vector store configured");
+
+        // 2. Upload the file
+        var uploadedFile = await _agentsClient.Files.UploadFileAsync(
+            fileStream,
+            PersistentAgentFilePurpose.Agents,
+            fileName,
+            cancellationToken
+        );
+
+        // 3. Add to vector store
+        var vsFile = await _agentsClient.VectorStores.CreateVectorStoreFileAsync(
+            vectorStoreId, uploadedFile.Value.Id, null, null, cancellationToken);
+
+        // 4. Wait for indexing to complete
+        while (vsFile.Value.Status == VectorStoreFileStatus.InProgress)
+        {
+            await Task.Delay(2000, cancellationToken);
+            vsFile = await _agentsClient.VectorStores.GetVectorStoreFileAsync(
+                vectorStoreId, uploadedFile.Value.Id, cancellationToken);
+        }
+
+        if (vsFile.Value.Status == VectorStoreFileStatus.Failed)
+            throw new Exception($"File indexing failed: {vsFile.Value.LastError?.Message}");
+
+        // return the file response
+        return new FileResponse(
+            Id: uploadedFile.Value.Id,
+            Filename: uploadedFile.Value.Filename,
+            Bytes: uploadedFile.Value.Size,
+            CreatedAt: uploadedFile.Value.CreatedAt,
+            Purpose: uploadedFile.Value.Purpose.ToString(),
+            Status: uploadedFile.Value.Status?.ToString(),
+            StatusDetails: uploadedFile.Value.StatusDetails
+        );
+    }
+
     public async Task<FileResponse> UploadFileAsync(
         Stream fileStream,
         string fileName,
@@ -544,6 +596,7 @@ public class AgentService : IAgentService
 
             _logger.LogInformation("Successfully uploaded file: {FileId}", file.Value.Id);
 
+            // return the file response
             return new FileResponse(
                 Id: file.Value.Id,
                 Filename: file.Value.Filename,

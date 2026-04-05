@@ -1,7 +1,9 @@
 using ATMET.AI.Core.Models.Requests;
 using ATMET.AI.Core.Models.Responses;
 using ATMET.AI.Core.Services;
+using ATMET.AI.Infrastructure.Configuration;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace ATMET.AI.Api.Endpoints;
 
@@ -147,6 +149,14 @@ public static class AgentsEndpoints
         // ====================================================================
         // File Management
         // ====================================================================
+
+        agents.MapPost("/files/add-to-agent", AddDocumentToAgentAsync)
+            .WithName("AddDocumentToAgentAsync")
+            .WithSummary("Add a document to an agent")
+            .WithDescription("Adds a document to an agent's vector store. Returns file ID, size, purpose, and status.")
+            .DisableAntiforgery()
+            .Produces<FileResponse>(StatusCodes.Status201Created)
+            .ProducesValidationProblem();
 
         agents.MapPost("/files", UploadFile)
             .WithName("UploadAgentFile")
@@ -332,6 +342,18 @@ public static class AgentsEndpoints
         await using var stream = file.OpenReadStream();
         var fileResponse = await agentService.UploadFileAsync(stream, file.FileName, cancellationToken);
         return Results.Created($"/api/v1/agents/files/{fileResponse.Id}", fileResponse);
+    }
+
+    private static async Task<IResult> AddDocumentToAgentAsync(
+        IFormFile file,
+        [FromServices] IAgentService agentService,
+        [FromServices] IOptions<AzureAIOptions> azureAIOptions,
+        CancellationToken cancellationToken)
+    {
+        // Unwrap IFormFile → Stream at the API boundary
+        await using var stream = file.OpenReadStream();
+        var fileResponse = await agentService.AddDocumentToAgentAsync(azureAIOptions.Value.AgentId, stream, file.FileName, cancellationToken);
+        return Results.Created($"/api/v1/agents/files/add-to-agent/{fileResponse.Id}", fileResponse);
     }
 
     private static async Task<IResult> GetFile(
