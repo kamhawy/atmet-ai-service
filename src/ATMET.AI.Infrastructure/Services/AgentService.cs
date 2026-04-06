@@ -546,29 +546,31 @@ public class AgentService : IAgentService
         string fileName,
         CancellationToken cancellationToken = default)
     {
-        var portalName = _aiOptions.PortalAgentName;
-        var agents = _agentsClient.Administration.GetAgentsAsync(cancellationToken: cancellationToken);
-        var agent = default(PersistentAgent);
+        //var portalName = _aiOptions.PortalAgentName;
+        //var agents = _agentsClient.Administration.GetAgentsAsync(cancellationToken: cancellationToken);
+        //var agent = default(PersistentAgent);
 
-        await foreach (var item in agents)
-        {
-            if (item.Name == portalName)
-            {
-                agent = item;
-                break;
-            }
-        }
+        //await foreach (var item in agents)
+        //{
+        //    if (item.Name == portalName)
+        //    {
+        //        agent = item;
+        //        break;
+        //    }
+        //}
 
-        _logger.LogInformation("Agent Found : {AgentId}", agent != null ? agent.Id : "NOT FOUND");
+        //_logger.LogInformation("Agent Found : {AgentId}", agent != null ? agent.Id : "NOT FOUND");
 
-        if (agent == null)
-        {
-            throw new InvalidOperationException("Agent not found");
-        }
+        //if (agent == null)
+        //{
+        //    throw new InvalidOperationException("Agent not found");
+        //}
 
         // 1. Get the agent's vector store
-        //var agent = await _agentsClient.Administration.GetAgentAsync(assistantId, cancellationToken);
-        var vectorStoreId = agent.ToolResources.FileSearch.VectorStoreIds
+        var assistantId = "asst_RwQkCaZPXdtFCVzZTPUEVjSm";
+        var agent = await _agentsClient.Administration.GetAgentAsync(assistantId, cancellationToken);
+        
+        var vectorStoreId = agent.Value.ToolResources.FileSearch.VectorStoreIds
             .FirstOrDefault()
             ?? throw new InvalidOperationException("Agent has no vector store configured");
 
