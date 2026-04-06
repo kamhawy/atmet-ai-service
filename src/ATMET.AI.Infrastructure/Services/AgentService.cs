@@ -546,7 +546,6 @@ public class AgentService : IAgentService
         string fileName,
         CancellationToken cancellationToken = default)
     {
-        var assistantId = string.Empty;
         var portalName = _aiOptions.PortalAgentName;
         var agents = _agentsClient.Administration.GetAgentsAsync(cancellationToken: cancellationToken);
         var agent = default(PersistentAgent);
@@ -559,6 +558,8 @@ public class AgentService : IAgentService
                 break;
             }
         }
+
+        _logger.LogInformation("Agent Found : {AgentId}", agent != null ? agent.Id : "NOT FOUND");
 
         if (agent == null)
         {
