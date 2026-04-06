@@ -27,4 +27,10 @@ public interface IPortalAgentService
         PortalChatMessage userMessage,
         string language = "en",
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Resolves the Azure persistent agent id for the portal assistant, creating it if missing.
+    /// Name and instructions come from AzureAI configuration (<c>PortalAgentName</c>, <c>PortalAgentInstructions</c>).
+    /// </summary>
+    Task<string> GetOrCreatePortalAgentIdAsync(CancellationToken cancellationToken = default);
 }

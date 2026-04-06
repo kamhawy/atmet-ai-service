@@ -607,25 +607,33 @@ public class PortalAgentService : IPortalAgentService
     // Agent & Thread Management
     // ========================================================================
 
-    private static readonly string PortalAgentName = "atmet-portal-assistant";
+    public async Task<string> GetOrCreatePortalAgentIdAsync(CancellationToken cancellationToken = default)
+    {
+        var agentsClient = _clientFactory.GetAgentsClient();
+        return await GetOrCreatePortalAgentAsync(agentsClient, cancellationToken);
+    }
 
     private async Task<string> GetOrCreatePortalAgentAsync(
         PersistentAgentsClient agentsClient, CancellationToken ct)
     {
+        var portalName = _aiOptions.PortalAgentName;
+        if (string.IsNullOrWhiteSpace(portalName))
+            throw new InvalidOperationException("AzureAI:PortalAgentName must be configured.");
+
         // Try to find existing portal agent
         var agents = agentsClient.Administration.GetAgentsAsync(cancellationToken: ct);
         await foreach (var agent in agents)
         {
-            if (agent.Name == PortalAgentName)
+            if (agent.Name == portalName)
                 return agent.Id;
         }
 
         // Create a new one
-        _logger.LogInformation("Creating portal agent: {AgentName}", PortalAgentName);
+        _logger.LogInformation("Creating portal agent: {AgentName}", portalName);
         var created = await agentsClient.Administration.CreateAgentAsync(
             model: _aiOptions.DefaultModelDeployment,
-            name: PortalAgentName,
-            instructions: "You are a government services portal assistant. Help citizens with their applications.",
+            name: portalName,
+            instructions: _aiOptions.PortalAgentInstructions,
             cancellationToken: ct);
 
         return created.Value.Id;

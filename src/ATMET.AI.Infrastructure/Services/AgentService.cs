@@ -16,14 +16,17 @@ public class AgentService : IAgentService
     private readonly AzureAIClientFactory _clientFactory;
     private readonly ILogger<AgentService> _logger;
     private readonly PersistentAgentsClient _agentsClient;
+    private readonly IPortalAgentService _portalAgentService;
 
     public AgentService(
         AzureAIClientFactory clientFactory,
+        IPortalAgentService portalAgentService,
         ILogger<AgentService> logger)
     {
         _clientFactory = clientFactory ?? throw new ArgumentNullException(nameof(clientFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _agentsClient = _clientFactory.GetAgentsClient();
+        _portalAgentService = portalAgentService ?? throw new ArgumentNullException(nameof(portalAgentService));
     }
 
     // ====================================================================
@@ -538,8 +541,10 @@ public class AgentService : IAgentService
         string fileName,
         CancellationToken cancellationToken = default)
     {
+        var assistantId = await _portalAgentService.GetOrCreatePortalAgentIdAsync(cancellationToken);
+
         // 1. Get the agent's vector store
-        var agent = await _agentsClient.Administration.GetAgentAsync(agentId, cancellationToken);
+        var agent = await _agentsClient.Administration.GetAgentAsync(assistantId, cancellationToken);
         var vectorStoreId = agent.Value.ToolResources.FileSearch.VectorStoreIds
             .FirstOrDefault()
             ?? throw new InvalidOperationException("Agent has no vector store configured");
