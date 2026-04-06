@@ -3,8 +3,10 @@ using ATMET.AI.Core.Models.Requests;
 using ATMET.AI.Core.Models.Responses;
 using ATMET.AI.Core.Services;
 using ATMET.AI.Infrastructure.Clients;
+using ATMET.AI.Infrastructure.Configuration;
 using Azure.AI.Agents.Persistent;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace ATMET.AI.Infrastructure.Services;
 
@@ -17,16 +19,19 @@ public class AgentService : IAgentService
     private readonly ILogger<AgentService> _logger;
     private readonly PersistentAgentsClient _agentsClient;
     private readonly IPortalAgentService _portalAgentService;
+    private readonly AzureAIOptions _aiOptions;
 
     public AgentService(
         AzureAIClientFactory clientFactory,
         IPortalAgentService portalAgentService,
+        IOptions<AzureAIOptions> aiOptions,
         ILogger<AgentService> logger)
     {
         _clientFactory = clientFactory ?? throw new ArgumentNullException(nameof(clientFactory));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _agentsClient = _clientFactory.GetAgentsClient();
         _portalAgentService = portalAgentService ?? throw new ArgumentNullException(nameof(portalAgentService));
+        _aiOptions = aiOptions.Value;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     // ====================================================================
@@ -541,11 +546,28 @@ public class AgentService : IAgentService
         string fileName,
         CancellationToken cancellationToken = default)
     {
-        var assistantId = await _portalAgentService.GetOrCreatePortalAgentIdAsync(cancellationToken);
+        var assistantId = string.Empty;
+        var portalName = _aiOptions.PortalAgentName;
+        var agents = _agentsClient.Administration.GetAgentsAsync(cancellationToken: cancellationToken);
+        var agent = default(PersistentAgent);
+
+        await foreach (var item in agents)
+        {
+            if (item.Name == portalName)
+            {
+                agent = item;
+                break;
+            }
+        }
+
+        if (agent == null)
+        {
+            throw new InvalidOperationException("Agent not found");
+        }
 
         // 1. Get the agent's vector store
-        var agent = await _agentsClient.Administration.GetAgentAsync(assistantId, cancellationToken);
-        var vectorStoreId = agent.Value.ToolResources.FileSearch.VectorStoreIds
+        //var agent = await _agentsClient.Administration.GetAgentAsync(assistantId, cancellationToken);
+        var vectorStoreId = agent.ToolResources.FileSearch.VectorStoreIds
             .FirstOrDefault()
             ?? throw new InvalidOperationException("Agent has no vector store configured");
 
