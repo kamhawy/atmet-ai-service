@@ -567,10 +567,30 @@ public class AgentService : IAgentService
         //}
 
         // 1. Get the agent's vector store
-        var assistantId = "asst_RwQkCaZPXdtFCVzZTPUEVjSm";
-        var agent = await _agentsClient.Administration.GetAgentAsync(assistantId, cancellationToken);
-        
-        var vectorStoreId = agent.Value.ToolResources.FileSearch.VectorStoreIds
+        // var assistantId = "asst_RwQkCaZPXdtFCVzZTPUEVjSm";
+        // var agent = await _agentsClient.Administration.GetAgentAsync(assistantId, cancellationToken);
+        var agents = new List<PersistentAgent>();
+        var agent = default(PersistentAgent);
+        var agentPages = _agentsClient.Administration.GetAgentsAsync(cancellationToken: cancellationToken);
+
+        await foreach (var item in agentPages)
+        {
+            if (item.Name == _aiOptions.PortalAgentName)
+            {
+                agent = item;
+            }
+
+            agents.Add(item);
+        }
+
+        _logger.LogInformation("Agents Count: {Count} | Agent Found: {AgentName}", agents.Count, agent?.Name ?? "NOT FOUND");
+
+        if (agent == null)
+        {
+            throw new InvalidOperationException("Agent not found");
+        }
+
+        var vectorStoreId = agent.ToolResources.FileSearch.VectorStoreIds
             .FirstOrDefault()
             ?? throw new InvalidOperationException("Agent has no vector store configured");
 
