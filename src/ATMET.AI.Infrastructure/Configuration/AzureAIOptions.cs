@@ -17,10 +17,14 @@ namespace ATMET.AI.Infrastructure.Configuration
         public string? AzureOpenAIEndpoint { get; set; }
         public bool EnableTelemetry { get; set; } = true;
         public string DefaultModelDeployment { get; set; } = "gpt-4o";
-        public string AgentId { get; set; } = "tax-agent";
 
         /// <summary>
-        /// Persistent agent name for the Client Portal assistant (Azure AI Agents list/create).
+        /// Persistent agent assistant id from Foundry / API (<c>asst_*</c>). Used for direct agent GET.
+        /// </summary>
+        public string PortalAgentId { get; set; } = "asst_RwQkCaZPXdtFCVzZTPUEVjSm";
+
+        /// <summary>
+        /// Display name of the portal agent in Foundry (e.g. tax-agent). Used for list lookup when resolving by name.
         /// </summary>
         public string PortalAgentName { get; set; } = "atmet-portal-assistant";
 

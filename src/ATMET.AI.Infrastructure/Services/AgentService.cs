@@ -4,6 +4,7 @@ using ATMET.AI.Core.Models.Responses;
 using ATMET.AI.Core.Services;
 using ATMET.AI.Infrastructure.Clients;
 using ATMET.AI.Infrastructure.Configuration;
+using Azure;
 using Azure.AI.Agents.Persistent;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -541,41 +542,23 @@ public class AgentService : IAgentService
     /// on the next conversation run.
     /// </summary>
     public async Task<FileResponse> AddDocumentToAgentAsync(
-        string agentId,
+        string portalAgentId,
         Stream fileStream,
         string fileName,
         CancellationToken cancellationToken = default)
     {
-        // 1. Get the agent's vector store
-        var agents = new List<PersistentAgent>();
-        var agent = default(PersistentAgent);
-        var agentPages = _agentsClient.Administration.GetAgentsAsync(cancellationToken: cancellationToken);
+        // 1. Resolve agent and discover file_search vector store (GET returns tool_resources; list often does not).
+        var agent = await LoadPersistentAgentForDocumentAsync(portalAgentId, cancellationToken);
 
-        await foreach (var item in agentPages)
+        var vectorStoreId = TryGetFileSearchVectorStoreId(agent);
+        if (string.IsNullOrEmpty(vectorStoreId))
         {
-            if (item.Name == _aiOptions.PortalAgentName)
-            {
-                agent = item;
-            }
-
-            agents.Add(item);
+            _logger.LogWarning(
+                "Agent {AgentName} ({AgentAssistantId}) has file_search but no vector store id in API response; creating and attaching one.",
+                agent.Name,
+                agent.Id);
+            vectorStoreId = await EnsureVectorStoreForAgentAsync(agent, cancellationToken);
         }
-
-        _logger.LogInformation("Agents Count: {Count} | Agent Found: {AgentName}", agents.Count, agent?.Name ?? "NOT FOUND");
-
-        if (agent == null)
-        {
-            agent = agents.FirstOrDefault();
-
-            if (agent == null)
-            {
-                throw new InvalidOperationException("Agent not found");
-            }
-        }
-
-        var vectorStoreId = agent.ToolResources?.FileSearch?.VectorStoreIds
-            ?.FirstOrDefault()
-            ?? throw new InvalidOperationException("Agent has no vector store configured");
 
         // 2. Upload the file
         var uploadedFile = await _agentsClient.Files.UploadFileAsync(
@@ -707,6 +690,174 @@ public class AgentService : IAgentService
             _logger.LogError(ex, "Failed to delete file: {FileId}", fileId);
             throw;
         }
+    }
+
+    /// <summary>
+    /// Loads the portal agent by <see cref="AzureAIOptions.PortalAgentId"/> (<c>asst_*</c>) when set,
+    /// otherwise by <see cref="AzureAIOptions.PortalAgentName"/> (Foundry display name).
+    /// Uses GET so <see cref="PersistentAgent.ToolResources"/> is populated (list responses often omit it).
+    /// </summary>
+    private async Task<PersistentAgent> LoadPersistentAgentForDocumentAsync(
+        string portalAgentId,
+        CancellationToken cancellationToken)
+    {
+        var id = portalAgentId?.Trim() ?? string.Empty;
+
+        if (!string.IsNullOrEmpty(id))
+        {
+            if (!id.StartsWith("asst_", StringComparison.Ordinal))
+            {
+                _logger.LogWarning(
+                    "AzureAI:PortalAgentId should use the assistant id format asst_*; got {Value}. Resolving by PortalAgentName instead.",
+                    id);
+            }
+            else
+            {
+                try
+                {
+                    var byId = await _agentsClient.Administration.GetAgentAsync(
+                        assistantId: id,
+                        cancellationToken: cancellationToken);
+                    if (byId?.Value != null)
+                        return byId.Value;
+                }
+                catch (RequestFailedException ex) when (ex.Status == 404)
+                {
+                    _logger.LogDebug(ex, "GetAgentAsync: assistant {PortalAgentId} not found; trying PortalAgentName.", id);
+                }
+            }
+        }
+
+        if (string.IsNullOrEmpty(_aiOptions.PortalAgentName))
+        {
+            throw new InvalidOperationException(
+                "Configure AzureAI:PortalAgentId (asst_...) and/or AzureAI:PortalAgentName to resolve the portal agent.");
+        }
+
+        PersistentAgent? matchByName = null;
+        await foreach (var item in _agentsClient.Administration.GetAgentsAsync(cancellationToken: cancellationToken))
+        {
+            if (string.Equals(item.Name, _aiOptions.PortalAgentName, StringComparison.Ordinal))
+            {
+                matchByName = item;
+                break;
+            }
+        }
+
+        if (matchByName == null)
+        {
+            throw new InvalidOperationException(
+                $"No agent named '{_aiOptions.PortalAgentName}' was found in this project.");
+        }
+
+        var full = await _agentsClient.Administration.GetAgentAsync(
+            assistantId: matchByName.Id,
+            cancellationToken: cancellationToken);
+
+        if (full?.Value == null)
+            throw new InvalidOperationException("Agent not found.");
+
+        _logger.LogInformation(
+            "AddDocument: using agent {Name} ({AssistantId}) via PortalAgentName",
+            full.Value.Name,
+            full.Value.Id);
+
+        return full.Value;
+    }
+
+    /// <summary>
+    /// Reads vector store id from file_search tool resources. Foundry may use
+    /// <see cref="FileSearchToolResource.VectorStoreIds"/> or enterprise <see cref="FileSearchToolResource.VectorStores"/>.
+    /// </summary>
+    private static string? TryGetFileSearchVectorStoreId(PersistentAgent agent)
+    {
+        var fileSearch = agent.ToolResources?.FileSearch;
+        if (fileSearch == null)
+            return null;
+
+        var direct = fileSearch.VectorStoreIds?.FirstOrDefault(id => !string.IsNullOrEmpty(id));
+        if (!string.IsNullOrEmpty(direct))
+            return direct;
+
+        if (fileSearch.VectorStores is not { Count: > 0 })
+            return null;
+
+        foreach (var entry in fileSearch.VectorStores)
+        {
+            var sources = entry.StoreConfiguration?.DataSources;
+            if (sources is null)
+                continue;
+
+            foreach (var ds in sources)
+            {
+                if (string.IsNullOrEmpty(ds.AssetIdentifier))
+                    continue;
+
+                if (ds.AssetIdentifier.StartsWith("vs_", StringComparison.Ordinal))
+                    return ds.AssetIdentifier;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Creates an empty vector store, attaches it to the agent via file_search tool resources,
+    /// and ensures the file_search tool is enabled.
+    /// </summary>
+    private async Task<string> EnsureVectorStoreForAgentAsync(
+        PersistentAgent agent,
+        CancellationToken cancellationToken)
+    {
+        var createResponse = await _agentsClient.VectorStores.CreateVectorStoreAsync(
+            fileIds: Array.Empty<string>(),
+            name: $"{agent.Name}-kb",
+            storeConfiguration: null,
+            expiresAfter: null,
+            chunkingStrategy: null,
+            metadata: null,
+            cancellationToken: cancellationToken);
+
+        var newVectorStoreId = createResponse.Value.Id;
+        _logger.LogInformation("Created vector store {VectorStoreId} for agent {AgentId}", newVectorStoreId, agent.Id);
+
+        var tools = agent.Tools?.ToList() ?? new List<ToolDefinition>();
+        if (!tools.Any(t => t is FileSearchToolDefinition))
+            tools.Add(new FileSearchToolDefinition());
+
+        var fileSearchResource = new FileSearchToolResource(
+            new List<string> { newVectorStoreId },
+            vectorStores: null);
+
+        var mergedResources = new ToolResources
+        {
+            CodeInterpreter = agent.ToolResources?.CodeInterpreter,
+            FileSearch = fileSearchResource,
+            AzureAISearch = agent.ToolResources?.AzureAISearch
+        };
+
+        if (agent.ToolResources?.Mcp is { Count: > 0 })
+        {
+            _logger.LogWarning(
+                "Agent {AgentId} has MCP tool resources; this update cannot set MCP on ToolResources in the current SDK and the service may drop MCP unless the API merges server-side.",
+                agent.Id);
+        }
+
+        await _agentsClient.Administration.UpdateAgentAsync(
+            assistantId: agent.Id,
+            model: agent.Model,
+            name: agent.Name,
+            description: agent.Description,
+            instructions: agent.Instructions,
+            tools: tools,
+            toolResources: mergedResources,
+            temperature: agent.Temperature,
+            topP: agent.TopP,
+            responseFormat: agent.ResponseFormat,
+            metadata: agent.Metadata,
+            cancellationToken: cancellationToken);
+
+        return newVectorStoreId;
     }
 
     // ====================================================================

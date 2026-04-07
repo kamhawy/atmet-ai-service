@@ -352,7 +352,7 @@ public static class AgentsEndpoints
     {
         // Unwrap IFormFile → Stream at the API boundary
         await using var stream = file.OpenReadStream();
-        var fileResponse = await agentService.AddDocumentToAgentAsync(azureAIOptions.Value.AgentId, stream, file.FileName, cancellationToken);
+        var fileResponse = await agentService.AddDocumentToAgentAsync(azureAIOptions.Value.PortalAgentId, stream, file.FileName, cancellationToken);
         return Results.Created($"/api/v1/agents/files/add-to-agent/{fileResponse.Id}", fileResponse);
     }
 
