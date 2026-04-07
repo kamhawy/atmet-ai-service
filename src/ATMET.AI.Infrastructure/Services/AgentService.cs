@@ -595,8 +595,8 @@ public class AgentService : IAgentService
             }
         }
 
-        var vectorStoreId = agent.ToolResources.FileSearch.VectorStoreIds
-            .FirstOrDefault()
+        var vectorStoreId = agent.ToolResources?.FileSearch?.VectorStoreIds
+            ?.FirstOrDefault()
             ?? throw new InvalidOperationException("Agent has no vector store configured");
 
         // 2. Upload the file
@@ -607,9 +607,13 @@ public class AgentService : IAgentService
             cancellationToken
         );
 
+        _logger.LogInformation("Uploaded File: {FileId}", uploadedFile.Value.Id);
+
         // 3. Add to vector store
         var vsFile = await _agentsClient.VectorStores.CreateVectorStoreFileAsync(
             vectorStoreId, uploadedFile.Value.Id, null, null, cancellationToken);
+
+        _logger.LogInformation("Vector Store File: {FileId}", vsFile.Value.Id);
 
         // 4. Wait for indexing to complete
         while (vsFile.Value.Status == VectorStoreFileStatus.InProgress)
@@ -619,8 +623,12 @@ public class AgentService : IAgentService
                 vectorStoreId, uploadedFile.Value.Id, cancellationToken);
         }
 
+        _logger.LogInformation("Vector Store File Status: {Status}", vsFile.Value.Status);
+
         if (vsFile.Value.Status == VectorStoreFileStatus.Failed)
             throw new Exception($"File indexing failed: {vsFile.Value.LastError?.Message}");
+
+        _logger.LogInformation("File Added to Vector Store: {FileId}", uploadedFile.Value.Id);
 
         // return the file response
         return new FileResponse(
