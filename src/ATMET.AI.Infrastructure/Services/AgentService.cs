@@ -587,7 +587,12 @@ public class AgentService : IAgentService
 
         if (agent == null)
         {
-            throw new InvalidOperationException("Agent not found");
+            agent = agents.FirstOrDefault();
+
+            if (agent == null)
+            {
+                throw new InvalidOperationException("Agent not found");
+            }
         }
 
         var vectorStoreId = agent.ToolResources.FileSearch.VectorStoreIds
