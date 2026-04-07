@@ -4,6 +4,8 @@ using ATMET.AI.Api.Middleware;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Scalar.AspNetCore;
+using Serilog;
+using Serilog.Events;
 
 namespace ATMET.AI.Api.Extensions;
 
@@ -18,7 +20,28 @@ public static class WebApplicationExtensions
     public static WebApplication UseApiPipeline(this WebApplication app)
     {
         app.UseMiddleware<ExceptionHandlingMiddleware>();
-        app.UseMiddleware<RequestLoggingMiddleware>();
+        app.UseSerilogRequestLogging(options =>
+        {
+            options.MessageTemplate =
+                "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms (correlation {CorrelationId})";
+            options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+            {
+                diagnosticContext.Set("CorrelationId", httpContext.TraceIdentifier);
+                diagnosticContext.Set("Host", httpContext.Request.Host.Value);
+                diagnosticContext.Set("RemoteIp", httpContext.Connection.RemoteIpAddress?.ToString());
+            };
+            options.GetLevel = (httpContext, _, ex) =>
+            {
+                if (ex != null)
+                    return LogEventLevel.Error;
+                return httpContext.Response.StatusCode switch
+                {
+                    >= 500 => LogEventLevel.Error,
+                    >= 400 => LogEventLevel.Warning,
+                    _ => LogEventLevel.Information
+                };
+            };
+        });
 
         // OpenAPI document (Swashbuckle) — required for Scalar and optional Swagger UI
         app.UseSwagger();

@@ -1,4 +1,6 @@
 using Serilog;
+using Serilog.Sinks.ApplicationInsights;
+using Serilog.Sinks.ApplicationInsights.TelemetryConverters;
 
 namespace ATMET.AI.Api.Extensions;
 
@@ -17,13 +19,23 @@ public static class HostBuilderExtensions
             .ReadFrom.Configuration(configuration)
             .Enrich.FromLogContext()
             .Enrich.WithProperty("Application", "ATMET.AI.Service")
+            .Enrich.WithEnvironmentName()
             .Enrich.WithMachineName()
-            .Enrich.WithThreadId();
+            .Enrich.WithThreadId()
+            .Enrich.WithActivityDetails(true, true);
 
         var connectionString = configuration["ApplicationInsights:ConnectionString"];
         if (!string.IsNullOrEmpty(connectionString))
         {
-            loggerConfig.WriteTo.ApplicationInsights(connectionString, TelemetryConverter.Traces);
+            // TraceTelemetryConverter forwards W3C operation / parent span for correlation with App Insights requests.
+            loggerConfig.WriteTo.ApplicationInsights(
+                connectionString,
+                new TraceTelemetryConverter(
+                    includeOperationIdPropertyAsTelemetryProperty: true,
+                    includeParentSpanIdPropertyAsTelemetryProperty: true,
+                    includeOperationNamePropertyAsTelemetryProperty: true,
+                    includeVersionPropertyAsTelemetryProperty: true,
+                    ignorePropertyNameCase: false));
         }
 
         var filePath = ResolveRollingFilePath(configuration);
@@ -49,7 +61,7 @@ public static class HostBuilderExtensions
 
         Log.Logger = loggerConfig.CreateLogger();
 
-        host.UseSerilog();
+        host.UseSerilog(Log.Logger, dispose: true);
         return host;
     }
 

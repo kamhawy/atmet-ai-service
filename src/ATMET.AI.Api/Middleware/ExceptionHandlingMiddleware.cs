@@ -1,5 +1,6 @@
 using ATMET.AI.Core.Exceptions;
 using Azure;
+using Microsoft.ApplicationInsights;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Text.Json;
@@ -7,22 +8,25 @@ using System.Text.Json;
 namespace ATMET.AI.Api.Middleware;
 
 /// <summary>
-/// Global exception handling middleware for consistent error responses
+/// Global exception handling middleware for consistent error responses and Application Insights exception telemetry.
 /// </summary>
 public class ExceptionHandlingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
     private readonly IHostEnvironment _environment;
+    private readonly TelemetryClient? _telemetryClient;
 
     public ExceptionHandlingMiddleware(
         RequestDelegate next,
         ILogger<ExceptionHandlingMiddleware> logger,
-        IHostEnvironment environment)
+        IHostEnvironment environment,
+        IServiceProvider serviceProvider)
     {
         _next = next;
         _logger = logger;
         _environment = environment;
+        _telemetryClient = serviceProvider.GetService<TelemetryClient>();
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -40,9 +44,8 @@ public class ExceptionHandlingMiddleware
     private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         var traceId = context.TraceIdentifier;
-
-        _logger.LogError(exception,
-            "An unhandled exception occurred. TraceId: {TraceId}", traceId);
+        var path = context.Request.Path.Value ?? string.Empty;
+        var method = context.Request.Method;
 
         var (statusCode, title, detail) = exception switch
         {
@@ -81,9 +84,36 @@ public class ExceptionHandlingMiddleware
             )
         };
 
+        var status = (int)statusCode;
+        var telemetryProperties = BuildTelemetryProperties(
+            traceId, path, method, status, exception, title);
+
+        _telemetryClient?.TrackException(exception, telemetryProperties);
+
+        using (_logger.BeginScope(new Dictionary<string, object?>
+        {
+            ["TraceId"] = traceId,
+            ["RequestPath"] = path,
+            ["RequestMethod"] = method,
+            ["StatusCode"] = status,
+            ["ExceptionType"] = exception.GetType().FullName,
+            ["ProblemTitle"] = title
+        }))
+        {
+            _logger.LogError(
+                exception,
+                "Request failed: {Method} {Path} -> {StatusCode} ({ExceptionType}). {Title}. TraceId: {TraceId}",
+                method,
+                path,
+                status,
+                exception.GetType().Name,
+                title,
+                traceId);
+        }
+
         var problemDetails = new ProblemDetails
         {
-            Status = (int)statusCode,
+            Status = status,
             Title = title,
             Detail = detail,
             Instance = context.Request.Path,
@@ -101,13 +131,10 @@ public class ExceptionHandlingMiddleware
                 .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
         }
 
-        // Add stack trace in development
         if (_environment.IsDevelopment() && exception.StackTrace is not null)
-        {
             problemDetails.Extensions["stackTrace"] = exception.StackTrace;
-        }
 
-        context.Response.StatusCode = (int)statusCode;
+        context.Response.StatusCode = status;
         context.Response.ContentType = "application/problem+json";
 
         var options = new JsonSerializerOptions
@@ -118,6 +145,37 @@ public class ExceptionHandlingMiddleware
 
         await context.Response.WriteAsync(
             JsonSerializer.Serialize(problemDetails, options));
+    }
+
+    private static Dictionary<string, string> BuildTelemetryProperties(
+        string traceId,
+        string path,
+        string method,
+        int statusCode,
+        Exception exception,
+        string title)
+    {
+        var props = new Dictionary<string, string>
+        {
+            ["TraceId"] = traceId,
+            ["RequestPath"] = path,
+            ["RequestMethod"] = method,
+            ["StatusCode"] = statusCode.ToString(),
+            ["ExceptionType"] = exception.GetType().FullName ?? exception.GetType().Name,
+            ["ProblemTitle"] = title
+        };
+
+        if (exception.InnerException is not null)
+            props["InnerExceptionType"] = exception.InnerException.GetType().FullName ?? "";
+
+        if (exception is RequestFailedException rfe)
+        {
+            props["AzureStatus"] = rfe.Status.ToString();
+            if (!string.IsNullOrEmpty(rfe.ErrorCode))
+                props["AzureErrorCode"] = rfe.ErrorCode;
+        }
+
+        return props;
     }
 
     private (HttpStatusCode statusCode, string title, string detail) MapAzureException(
