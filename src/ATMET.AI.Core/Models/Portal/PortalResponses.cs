@@ -256,3 +256,16 @@ public record ActivityEntryResponse(
 );
 
 #endregion
+
+#region Speech
+
+/// <summary>
+/// Short-lived authorization token for the **browser Speech SDK** (continuous recognition).
+/// </summary>
+public record SpeechTokenResponse(
+    string Token,
+    string Region,
+    int ExpiresInMinutes
+);
+
+#endregion

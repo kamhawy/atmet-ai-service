@@ -140,6 +140,7 @@ public static class WebApplicationExtensions
         PortalWorkflowEndpoints.MapEndpoints(apiGroup);
         PortalActivityEndpoints.MapEndpoints(apiGroup);
         PortalChatEndpoints.MapEndpoints(apiGroup);
+        PortalSpeechEndpoints.MapEndpoints(apiGroup);
 
         app.MapGet("/", () => Results.Ok(new
         {

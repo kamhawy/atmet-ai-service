@@ -88,6 +88,9 @@ public sealed class AtmetPortalHeadersOperationFilter : IOperationFilter
             path.Equals("api/v1/portal/conversations", StringComparison.OrdinalIgnoreCase))
             return true;
 
+        if (path.StartsWith("api/v1/portal/speech/", StringComparison.OrdinalIgnoreCase))
+            return true;
+
         if (path.Contains("/chat", StringComparison.OrdinalIgnoreCase))
             return true;
 

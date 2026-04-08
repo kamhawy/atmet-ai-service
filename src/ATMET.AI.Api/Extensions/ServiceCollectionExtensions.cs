@@ -24,6 +24,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddApiServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddAzureAIServices(configuration);
+        services.Configure<AzureSpeechOptions>(configuration.GetSection(AzureSpeechOptions.SectionName));
         services.AddSupabaseServices(configuration);
         services.AddApiAuthentication(configuration);
         services.AddApiAuthorization();
@@ -141,6 +142,11 @@ public static class ServiceCollectionExtensions
     {
         services.AddHttpClient("AzureAI")
             .AddStandardResilienceHandler();
+
+        services.AddHttpClient("AzureSpeech", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
         return services;
     }
 
