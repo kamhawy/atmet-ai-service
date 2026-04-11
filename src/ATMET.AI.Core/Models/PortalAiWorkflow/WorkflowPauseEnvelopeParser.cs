@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 namespace ATMET.AI.Core.Models.PortalAiWorkflow;
 
 /// <summary>
-/// Parses rich HITL pause envelopes (Tax Assistant PDF §7) and legacy minimal control objects
+/// Parses rich HITL pause envelopes (portal workflow design) and legacy minimal control objects
 /// (<c>pause</c> + <c>uiAction</c> + <c>waitingFor</c>) from assistant text or tool JSON fragments.
 /// No JSON Schema validation — normalization and length limits only.
 /// </summary>
@@ -96,7 +96,17 @@ public static class WorkflowPauseEnvelopeParser
         || obj.ContainsKey("messageToUser")
         || obj.ContainsKey("status")
         || obj.ContainsKey("required_fields")
-        || obj.ContainsKey("requiredFields");
+        || obj.ContainsKey("requiredFields")
+        || obj.ContainsKey("required_documents")
+        || obj.ContainsKey("requiredDocuments")
+        || obj.ContainsKey("extracted_fields")
+        || obj.ContainsKey("extractedFields")
+        || obj.ContainsKey("advisory_result")
+        || obj.ContainsKey("advisoryResult")
+        || obj.ContainsKey("next_action")
+        || obj.ContainsKey("nextAction")
+        || obj.ContainsKey("debug")
+        || obj.ContainsKey("candidates");
 
     private static JsonObject NormalizeEnvelope(JsonObject src)
     {
@@ -128,6 +138,15 @@ public static class WorkflowPauseEnvelopeParser
         copy("case_id", "caseId", "caseId");
         copy("required_fields", "requiredFields", "requiredFields");
         copy("service_name", "serviceName", "serviceName");
+        copy("required_documents", "requiredDocuments", "requiredDocuments");
+        copy("extracted_fields", "extractedFields", "extractedFields");
+        copy("advisory_result", "advisoryResult", "advisoryResult");
+        copy("next_action", "nextAction", "nextAction");
+        copy("debug", "debug", "debug");
+        copy("candidates", "candidates", "candidates");
+        copy("missing_fields", "missingFields", "missingFields");
+        copy("validation_issues", "validationIssues", "validationIssues");
+        copy("overall_confidence", "overallConfidence", "overallConfidence");
 
         if (src.TryGetPropertyValue("pause", out var p) && p != null)
             o["pause"] = p.DeepClone();

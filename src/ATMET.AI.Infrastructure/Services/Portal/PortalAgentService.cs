@@ -267,13 +267,14 @@ public class PortalAgentService : IPortalAgentService
         if (resumeData is null || string.IsNullOrWhiteSpace(resumeData.PreviousResponseId))
             throw new InvalidOperationException("data.previousResponseId is required.");
 
+        // Portal workflow resume: keys (e.g. form_values, service_id, uploaded_docs) at the root of
+        // resume_payload sent to Foundry — not nested under a generic "client" object.
         JsonElement payload;
-        if (resumeData.ResumePayload is { ValueKind: not JsonValueKind.Null and not JsonValueKind.Undefined } client)
+        if (resumeData.ResumePayload is { ValueKind: JsonValueKind.Object } rp && rp.EnumerateObject().Any())
         {
-            var dict = new Dictionary<string, object> { ["client"] = client };
+            var dict = JsonSerializer.Deserialize<Dictionary<string, object?>>(rp.GetRawText()) ?? new();
             if (!string.IsNullOrEmpty(msg.Content))
                 dict["followUpText"] = msg.Content!;
-
             payload = JsonSerializer.SerializeToElement(dict, JsonOptions);
         }
         else if (!string.IsNullOrEmpty(msg.Content))

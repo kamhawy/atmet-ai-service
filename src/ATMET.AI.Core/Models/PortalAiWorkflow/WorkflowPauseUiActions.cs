@@ -1,10 +1,10 @@
 namespace ATMET.AI.Core.Models.PortalAiWorkflow;
 
 /// <summary>
-/// Canonical <c>ui_action</c> values from the Tax Assistant workflow design (PDF §5–§7).
-/// The agent may emit additional strings; <see cref="IsKnown"/> is advisory for UI routing.
+/// Canonical <c>ui_action</c> values for portal workflow HITL pauses (entity-agnostic).
+/// Workflows may emit additional strings; <see cref="IsKnown"/> is advisory for UI routing.
 /// </summary>
-public static class TaxAssistantUiActions
+public static class WorkflowPauseUiActions
 {
     public const string RenderMessage = "render_message";
     public const string AskClarification = "ask_clarification";

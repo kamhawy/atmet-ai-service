@@ -246,6 +246,11 @@ public class PortalAiWorkflowService : IPortalAiWorkflowService
     /// Tax Assistant PDF §2 entry payload: <c>user_message</c>, <c>language</c>, <c>thread_state</c>, <c>attachments</c>,
     /// optional <c>resume_payload</c> on HITL resume (§6–§7).
     /// </summary>
+    /// <remarks>
+    /// <paramref name="attachmentIds"/> — ATMET convention: each entry is a <strong>portal document id</strong> (UUID string)
+    /// returned from <c>POST /api/v1/portal/cases/{{caseId}}/documents</c> after the SPA uploads binary to storage.
+    /// Matches the PDF intent that <c>attachments</c> are <em>references</em> to uploaded artifacts, not embedded file bytes.
+    /// </remarks>
     private static string BuildWorkflowTurnInputJson(
         PortalAiThreadState merged,
         string userNaturalLanguageInput,

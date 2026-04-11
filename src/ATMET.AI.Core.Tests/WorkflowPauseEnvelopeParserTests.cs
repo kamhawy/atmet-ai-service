@@ -68,9 +68,39 @@ public class WorkflowPauseEnvelopeParserTests
     }
 
     [Fact]
-    public void TaxAssistantUiActions_KnownSet()
+    public void WorkflowPauseUiActions_KnownSet()
     {
-        Assert.True(TaxAssistantUiActions.IsKnown(TaxAssistantUiActions.RenderForm));
-        Assert.False(TaxAssistantUiActions.IsKnown("unknown_action"));
+        Assert.True(WorkflowPauseUiActions.IsKnown(WorkflowPauseUiActions.RenderForm));
+        Assert.False(WorkflowPauseUiActions.IsKnown("unknown_action"));
+    }
+
+    [Fact]
+    public void TryMerge_PdfAppendixFields_NormalizedToCamelCase()
+    {
+        var json = """
+            {"status":"paused","ui_action":"upload_documents","waiting_for":"document_upload",
+             "required_documents":[{"binding_id":"b1","document_id":"d1","name_en":"Qatar ID"}],
+             "extracted_fields":[{"field_id":"tin","value":"123"}],
+             "advisory_result":{"is_authoritative":false},
+             "next_action":{"resume_endpoint":"/x"},
+             "debug":{"route":"B"}}
+            """;
+
+        string? wire = null;
+        string? ui = null;
+        string? wf = null;
+        string? rid = null;
+        JsonElement? raw = null;
+
+        var ok = WorkflowPauseEnvelopeParser.TryMergeFromJsonObjectString(
+            json.Trim(), ref wire, ref ui, ref wf, ref rid, ref raw);
+
+        Assert.True(ok);
+        Assert.NotNull(raw);
+        Assert.True(raw.Value.TryGetProperty("requiredDocuments", out var rd) && rd.GetArrayLength() == 1);
+        Assert.True(raw.Value.TryGetProperty("extractedFields", out var ef) && ef.GetArrayLength() == 1);
+        Assert.True(raw.Value.TryGetProperty("advisoryResult", out _));
+        Assert.True(raw.Value.TryGetProperty("nextAction", out _));
+        Assert.True(raw.Value.TryGetProperty("debug", out _));
     }
 }
