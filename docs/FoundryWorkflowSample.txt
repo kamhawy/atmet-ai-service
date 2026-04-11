@@ -1,0 +1,36 @@
+================================================================================
+Foundry workflow / Responses sample (reference only — not built into the API)
+================================================================================
+This file was moved from repository root (FoundryWorkflow.cs) for clarity.
+It demonstrates connecting to an Azure AI Foundry project and invoking a
+deployed workflow agent via the Project Responses client.
+
+Replace endpoint, agent name, and version with your environment values.
+
+--------------------------------------------------------------------------------
+Sample code (C# top-level statements — paste into a small console app or script)
+--------------------------------------------------------------------------------
+
+// dotnet add package Azure.AI.Projects --version 2.0.0-beta.1
+using Azure.AI.Projects;
+using Azure.AI.Projects.OpenAI;
+using Azure.Identity;
+using OpenAI;
+using OpenAI.Responses;
+
+#pragma warning disable OPENAI001
+
+const string projectEndpoint = "https://wf-atmet-resource.services.ai.azure.com/api/projects/wf-atmet";
+const string agentName = "tax-wf";
+const string agentVersion = "7";
+const string userMessage = "Hi tax-wf";
+
+// Connect to your project using the endpoint from your project page
+AIProjectClient projectClient = new(endpoint: new Uri(projectEndpoint), tokenProvider: new DefaultAzureCredential());
+
+ProjectConversation conversation = projectClient.OpenAI.Conversations.CreateProjectConversation();
+AgentReference agentReference = new AgentReference(name: agentName, version: agentVersion);
+ProjectResponsesClient responseClient = projectClient.OpenAI.GetProjectResponsesClientForAgent(agentReference, conversation.Id);
+
+ResponseResult response = responseClient.CreateResponse(userMessage);
+Console.WriteLine(response.GetOutputText());

@@ -96,7 +96,7 @@ public class PortalAgentService : IPortalAgentService
 
         // 7. Create a run with tool definitions
         var tools = BuildToolDefinitions();
-        var systemPrompt = BuildSystemPrompt(context, entityId, language);
+        var systemPrompt = BuildAdditionalSystemPrompt(context, entityId, language);
 
         var run = await agentsClient.Runs.CreateRunAsync(
             threadId: threadId,
@@ -284,7 +284,7 @@ public class PortalAgentService : IPortalAgentService
         return data.Value.TryGetProperty(propertyName, out var prop) ? prop.ToString() : "";
     }
 
-    private static string BuildSystemPrompt(ConversationContext context, string entityId, string language = "en")
+    private static string BuildAdditionalSystemPrompt(ConversationContext context, string entityId, string language = "en")
     {
         var isArabic = language.Equals("ar", StringComparison.OrdinalIgnoreCase);
         var parts = new List<string>
