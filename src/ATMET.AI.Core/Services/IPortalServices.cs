@@ -33,6 +33,15 @@ public interface IPortalConversationService
     Task<PortalConversationResponse?> GetConversationAsync(string conversationId, string userId, CancellationToken ct = default);
     Task DeleteConversationAsync(string conversationId, string userId, CancellationToken ct = default);
     Task<PortalMessageResponse> SendMessageAsync(string conversationId, string userId, SendMessageRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Updates Foundry / workflow session metadata on a conversation (partial patch).
+    /// </summary>
+    Task<PortalConversationResponse?> UpdateFoundrySessionAsync(
+        string conversationId,
+        string userId,
+        FoundryConversationSessionPatch patch,
+        CancellationToken ct = default);
 }
 
 /// <summary>
@@ -63,6 +72,13 @@ public interface IPortalFormService
 public interface IPortalWorkflowService
 {
     Task<WorkflowStateResponse?> GetWorkflowStateAsync(string caseId, string userId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Workflow snapshot when tenancy is proven separately (e.g. internal Foundry tools with <c>X-Portal-Entity-Id</c>).
+    /// </summary>
+    Task<WorkflowStateResponse?> GetWorkflowStateForEntityAsync(string caseId, string entityId,
+        CancellationToken ct = default);
+
     Task<WorkflowStateResponse> CompleteStepAsync(string caseId, string stepId, string userId, CompleteStepRequest? request = null, CancellationToken ct = default);
 }
 

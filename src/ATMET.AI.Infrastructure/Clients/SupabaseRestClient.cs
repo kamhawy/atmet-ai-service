@@ -26,6 +26,16 @@ public class SupabaseRestClient
         PropertyNameCaseInsensitive = true
     };
 
+    /// <summary>
+    /// Use for PATCH bodies that must send JSON <c>null</c> (e.g. clearing nullable columns). Default <see cref="JsonOptions"/> omits nulls.
+    /// </summary>
+    public static readonly JsonSerializerOptions JsonOptionsIncludeNulls = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+        DefaultIgnoreCondition = JsonIgnoreCondition.Never,
+        PropertyNameCaseInsensitive = true
+    };
+
     public SupabaseRestClient(
         HttpClient http,
         IOptions<SupabaseOptions> options,
@@ -135,10 +145,11 @@ public class SupabaseRestClient
         string id,
         object data,
         string idColumn = "id",
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        JsonSerializerOptions? serializerOptions = null)
     {
         var url = $"/rest/v1/{table}?{idColumn}=eq.{id}";
-        var json = JsonSerializer.Serialize(data, JsonOptions);
+        var json = JsonSerializer.Serialize(data, serializerOptions ?? JsonOptions);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         using var request = new HttpRequestMessage(HttpMethod.Patch, url)

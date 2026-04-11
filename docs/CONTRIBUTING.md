@@ -73,7 +73,7 @@ dotnet run
 
 5. Run tests:
 ```bash
-dotnet test
+dotnet test src/ATMET.AI.Api.Tests/ATMET.AI.Api.Tests.csproj
 ```
 
 ## Coding Standards

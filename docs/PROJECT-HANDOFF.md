@@ -34,15 +34,16 @@ ATMET.AI.Service/
 │   │   ├── Models/                   # Request/Response DTOs
 │   │   └── Exceptions/               # Custom exceptions
 │   │
-│   └── ATMET.AI.Infrastructure/      # Azure Integration Layer
-│       ├── Services/                 # ✅ ACTUAL IMPLEMENTATIONS
-│       │   ├── AgentService.cs       # Full Azure AI Agents integration
-│       │   ├── DeploymentService.cs  # Model deployment management
-│       │   └── ConnectionService.cs  # Azure resource connections
-│       ├── Clients/                  # Azure AI client factory
-│       └── InfrastructureServices.cs # DI registration
+│   ├── ATMET.AI.Infrastructure/      # Azure Integration Layer
+│   │   ├── Services/                 # ✅ ACTUAL IMPLEMENTATIONS
+│   │   │   ├── AgentService.cs       # Full Azure AI Agents integration
+│   │   │   ├── DeploymentService.cs  # Model deployment management
+│   │   │   └── ConnectionService.cs  # Azure resource connections
+│   │   ├── Clients/                  # Azure AI client factory
+│   │   └── InfrastructureServices.cs # DI registration
+│   │
+│   └── ATMET.AI.Api.Tests/           # xUnit + WebApplicationFactory (internal Foundry routes, etc.)
 │
-├── tests/                            # Test projects (placeholders)
 ├── .github/                          # GitHub Actions CI/CD
 └── [Documentation files]             # 10+ comprehensive guides
 ```

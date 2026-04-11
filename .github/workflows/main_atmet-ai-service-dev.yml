@@ -21,13 +21,13 @@ jobs:
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.x'
+          dotnet-version: "10.x"
 
-      - name: Build with dotnet
-        run: dotnet build src/ATMET.AI.Api/ATMET.AI.Api.csproj --configuration Release
+      - name: Restore and test
+        run: dotnet test ATMET.AI.Service.sln --configuration Release
 
-      - name: dotnet publish
-        run: dotnet publish src/ATMET.AI.Api/ATMET.AI.Api.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp
+      - name: Publish API
+        run: dotnet publish src/ATMET.AI.Api/ATMET.AI.Api.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp --no-build
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -47,7 +47,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: .net-app
-      
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -59,7 +59,6 @@ jobs:
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'atmet-ai-service-dev'
-          slot-name: 'Production'
+          app-name: "atmet-ai-service-dev"
+          slot-name: "Production"
           package: .
-          

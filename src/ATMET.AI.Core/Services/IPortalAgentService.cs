@@ -3,15 +3,13 @@ using ATMET.AI.Core.Models.Portal;
 namespace ATMET.AI.Core.Services;
 
 /// <summary>
-/// AI agent service for the Client Portal chat experience.
-/// Processes user messages, calls tools (which map to IPortal*Service interfaces),
-/// and streams structured responses via SSE.
+/// Client Portal chat: persists messages, loads context, and streams Foundry workflow turns via SSE.
 /// </summary>
 public interface IPortalAgentService
 {
     /// <summary>
     /// Process a user message in a portal conversation.
-    /// Yields SSE events: typing → tool_call(s) → message(s) → done.
+    /// Yields SSE events: typing → message → done (or error → done).
     /// </summary>
     /// <param name="conversationId">The conversation to process the message in.</param>
     /// <param name="userId">Portal user ID (from X-Portal-User-Id header).</param>
@@ -27,10 +25,4 @@ public interface IPortalAgentService
         PortalChatMessage userMessage,
         string language = "en",
         CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Resolves the Azure persistent agent id for the portal assistant, creating it if missing.
-    /// Name and instructions come from AzureAI configuration (<c>PortalAgentName</c>, <c>PortalAgentInstructions</c>).
-    /// </summary>
-    Task<string> GetOrCreatePortalAgentIdAsync(CancellationToken cancellationToken = default);
 }

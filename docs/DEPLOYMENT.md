@@ -222,6 +222,80 @@ az webapp config appsettings set \
     AzureAd__Audience="api://your-api-client-id"
 ```
 
+### 7a. Azure App Service — application settings reference
+
+In the Azure Portal (**App Service → Configuration → Application settings**), ASP.NET Core binds nested configuration with **double underscores** in the name (e.g. `AzureAI__ProjectEndpoint`). Below is what the **ATMET.AI.Api** host expects for a working deployment.
+
+**Host and routing (avoid 400 “invalid host”)**
+
+| Name | Required | Purpose |
+|------|----------|---------|
+| `ASPNETCORE_ENVIRONMENT` | Recommended | e.g. `Production` or `Staging`. |
+| `AllowedHosts` | **Yes** | Semicolon-separated **hostnames only** (no `https://`). Must include your site hostname (e.g. `your-app.azurewebsites.net`) and any custom domain; use `*.azurewebsites.net` if appropriate. See [Troubleshooting](#issue-http-error-400---the-request-hostname-is-invalid). |
+
+**Azure AI Foundry (`AzureAI__*`)**
+
+| Name | Required | Purpose |
+|------|----------|---------|
+| `AzureAI__ProjectEndpoint` | **Yes** | Foundry project URL (`https://…services.ai.azure.com/api/projects/…`). Used by `AIProjectClient` and health check. |
+| `AzureAI__ManagedIdentityClientId` | Conditional | User-assigned managed identity **client id** (GUID). **Omit or leave empty** to use **system-assigned** MI with `DefaultAzureCredential`. Wrong GUID breaks auth — see [Troubleshooting](#issue-managedidentitycredential--no-user-assigned-or-delegated-managed-identity-found-for-specified-clientidresourceidprincipalid). |
+| `AzureAI__ApiKey` | Rare | Usually empty when using MI; set only if your deployment uses key-based auth to the project. |
+| `AzureAI__AzureOpenAIEndpoint` | Optional | Reserved / auxiliary; primary access is via the project client. |
+| `AzureAI__DefaultModelDeployment` | Recommended | Default deployment name (e.g. `gpt-4o`). |
+| `AzureAI__EnableTelemetry` | Optional | Default `true`. |
+| `AzureAI__RequestTimeoutSeconds` / `AzureAI__MaxRetryAttempts` | Optional | HTTP resilience defaults. |
+| `AzureAI__PortalAgentId` | Optional | Assistant id (`asst_*`) for generic Persistent Agents admin APIs (not portal SSE chat). |
+| `AzureAI__PortalAgentName` | Recommended | Display name for resolving the named assistant in Foundry (agent admin APIs). |
+| `AzureAI__PortalAgentInstructions` | Optional | Seed instructions when creating agents. |
+| `AzureAI__WorkflowAgentName` | **Yes** (portal chat) | Must match Foundry **workflow** agent name for MUBASHIR SSE (`IPortalAiWorkflowService`). |
+| `AzureAI__WorkflowAgentVersion` | Recommended | Agent version string for `AgentReference`. |
+**Supabase (`Supabase__*`) — portal + conversation persistence**
+
+| Name | Required | Purpose |
+|------|----------|---------|
+| `Supabase__Url` | **Yes** | Project URL (`https://xxx.supabase.co`). |
+| `Supabase__AnonKey` | **Yes** | Sent as `apikey` header on PostgREST. |
+| `Supabase__ServiceRoleKey` | **Yes** | Bearer token for server-side access (elevated). |
+| `Supabase__DocumentsBucket` | Optional | Storage bucket name (default `application-documents`). |
+
+**API keys (`ApiKeys__*`)**
+
+| Name | Required | Purpose |
+|------|----------|---------|
+| `ApiKeys__HeaderName` | Optional | Default `X-Api-Key`. |
+| `ApiKeys__Keys__0` | **Yes** | At least one valid key (use index `__0`, `__1`, … for multiple). Same header used by the SPA and Foundry HTTP tools unless you add a second key at the gateway. |
+
+**CORS (`Cors__AllowedOrigins__*`)**
+
+| Name | Required | Purpose |
+|------|----------|---------|
+| `Cors__AllowedOrigins__0`, `__1`, … | **Yes** for browser SPAs | Origins allowed to call the API with credentials (exact URLs, e.g. `https://your-portal.example`). |
+
+**Application Insights (`ApplicationInsights__*`)**
+
+| Name | Required | Purpose |
+|------|----------|---------|
+| `ApplicationInsights__ConnectionString` | Recommended | Enables Serilog AI sink + OpenTelemetry export. Omit or leave empty to disable telemetry registration (except local). |
+| `ApplicationInsights__EnableAdaptiveSampling` | Optional | Trace sampling behavior. |
+| `ApplicationInsights__EnableDependencyTracking` | Optional | Full Azure Monitor distro vs trace-only. |
+| `ApplicationInsights__EnablePerformanceCounterCollectionModule` | Optional | Metrics module toggle in trace-only path. |
+
+**Azure Speech (`AzureSpeech__*`) — only if portal speech endpoints are used**
+
+| Name | Required | Purpose |
+|------|----------|---------|
+| `AzureSpeech__Endpoint` | If using speech | Speech resource endpoint. |
+| `AzureSpeech__Region` | If using speech | Region. |
+| `AzureSpeech__Key` | If using speech | API key. |
+
+**Rate limiting (`RateLimiting__*`) — optional**
+
+`RateLimiting__PermitLimit`, `RateLimiting__Window`, `RateLimiting__QueueLimit` — defaults exist in code if unset.
+
+**Managed identity RBAC (not env vars)**
+
+Assign the app’s **system- or user-assigned** identity roles on the Foundry / Cognitive Services scope (e.g. **Cognitive Services User**, **Cognitive Services OpenAI User**) as in **step 6 (Grant Azure Permissions)** above.
+
 ### 8. Configure Logging
 
 ```bash

@@ -117,6 +117,7 @@ public record PortalConversationSummaryResponse(
 
 /// <summary>
 /// Full thread including **messages** and optional persisted **formData** snapshot.
+/// Foundry session fields mirror Supabase <c>conversations</c> columns (see migrations <c>20260411165241_96f46d32-f101-48ea-a6de-acbd3fe33d6d</c>, <c>20260411213000_pause_envelope_jsonb</c>).
 /// </summary>
 public record PortalConversationResponse(
     string Id,
@@ -127,11 +128,20 @@ public record PortalConversationResponse(
     List<PortalMessageResponse> Messages,
     JsonElement? FormData,
     DateTimeOffset CreatedAt,
-    DateTimeOffset UpdatedAt
+    DateTimeOffset UpdatedAt,
+    string? FoundryProjectConversationId = null,
+    string? FoundryRunId = null,
+    string? LastResponseId = null,
+    string? PauseUiAction = null,
+    string? PauseWaitingFor = null,
+    JsonElement? PauseEnvelope = null,
+    string? FoundryCurrentStep = null,
+    string? ConversationLanguage = null
 );
 
 /// <summary>
 /// A single persisted **chat message** (citizen, assistant, or system).
+/// <c>Data</c> carries structured JSON for discriminated <c>Type</c> values (e.g. cards) when present in storage.
 /// </summary>
 public record PortalMessageResponse(
     string Id,
@@ -141,7 +151,8 @@ public record PortalMessageResponse(
     DateTimeOffset Timestamp,
     JsonElement? Attachments = null,
     JsonElement? DocumentScan = null,
-    JsonElement? FormCard = null
+    JsonElement? FormCard = null,
+    JsonElement? Data = null
 );
 
 #endregion

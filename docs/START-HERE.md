@@ -18,9 +18,8 @@ ATMET.AI.Service/
 ├── src/
 │   ├── ATMET.AI.Api/               - 🚀 Main Web API project
 │   ├── ATMET.AI.Core/              - 💼 Business logic layer
-│   └── ATMET.AI.Infrastructure/    - 🔧 Azure integration layer
-│
-└── tests/                          - 🧪 Test projects (placeholders)
+│   ├── ATMET.AI.Infrastructure/    - 🔧 Azure integration layer
+│   └── ATMET.AI.Api.Tests/         - 🧪 API unit + integration tests
 ```
 
 ## 🚀 Quick Start (3 Steps)

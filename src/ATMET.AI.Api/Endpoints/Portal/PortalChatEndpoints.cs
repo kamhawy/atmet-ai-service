@@ -6,10 +6,7 @@ using System.Text.Json;
 namespace ATMET.AI.Api.Endpoints.Portal;
 
 /// <summary>
-/// SSE streaming endpoint for portal AI agent chat.
-/// All portal mutations flow through this endpoint — the agent
-/// calls tools (create_case, submit_form, etc.) and streams
-/// structured responses to the frontend.
+/// SSE streaming endpoint for portal AI chat (Foundry workflow via <c>IPortalAiWorkflowService</c>).
 /// </summary>
 public static class PortalChatEndpoints
 {
@@ -31,13 +28,12 @@ public static class PortalChatEndpoints
                 **Primary integration point** for the MUBASHIR AI experience. Accepts a **`PortalChatMessage`** JSON body (discriminated by **`type`**) and returns **`text/event-stream`**.
 
                 **Event model (`PortalChatEvent`):**
-                - **`eventType`** — `typing` | `message` | `tool_call` | `done` | `error`
-                - **`message`** — populated for `message` events (see **`PortalMessageTypes`** for `type` values such as `service_catalog`, `form_request`, `document_request`, …)
-                - **`toolName` / `toolStatus`** — for long-running tool execution visibility (`calling` | `completed`)
+                - **`eventType`** — `typing` | `message` | `done` | `error`
+                - **`message`** — populated for `message` events (see **`PortalMessageTypes`** for structured `type` values)
 
-                **Tooling:** the agent may invoke server-side tools (create case, submit form, upload metadata, etc.); clients should render structured **`data`** JSON on each message.
+                Each turn runs the configured Foundry **workflow** agent (Project Responses). For HITL resume after a pause, send **`type`:** `workflow_resume` with **`data`:** `{ "previousResponseId": "<id>", "resumePayload": { ... } }` (see **`PortalAiWorkflowResumeData`** in Core).
 
-                **Stream format:** each SSE chunk is `data: {json}`; ends with `data: [DONE]`.
+                **Stream format:** each SSE chunk is `data: {json}`; ends with `data: [DONE]`. After **`error`**, a **`done`** event is still emitted when the stream ends normally.
 
                 **Headers:** `X-Portal-User-Id`, `X-Portal-Entity-Id`, optional `X-Portal-Language` (`en`/`ar`).
                 """)

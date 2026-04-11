@@ -49,6 +49,8 @@ public static class PortalConversationsEndpoints
             .WithDescription("""
                 Loads the **full thread** including **`messages`** (role, content, optional structured attachments) and persisted **`formData`** snapshot when present.
 
+                When a Foundry workflow session exists, the response also includes optional **Foundry** fields (e.g. `foundryProjectConversationId`, `lastResponseId`, `pauseUiAction`, `foundryCurrentStep`, `conversationLanguage`) for resume/rehydration.
+
                 **Headers:** `X-Portal-User-Id` (required). **`404`** if not found or not owned.
                 """)
             .Produces<PortalConversationResponse>()

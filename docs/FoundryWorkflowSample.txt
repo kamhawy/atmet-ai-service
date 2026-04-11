@@ -2,35 +2,37 @@
 Foundry workflow / Responses sample (reference only — not built into the API)
 ================================================================================
 This file was moved from repository root (FoundryWorkflow.cs) for clarity.
-It demonstrates connecting to an Azure AI Foundry project and invoking a
-deployed workflow agent via the Project Responses client.
 
-Replace endpoint, agent name, and version with your environment values.
+Azure.AI.Projects 2.0 + Azure.AI.Extensions.OpenAI 2.0 use ProjectOpenAIClient
+(not projectClient.OpenAI). See the runnable harness:
 
---------------------------------------------------------------------------------
-Sample code (C# top-level statements — paste into a small console app or script)
---------------------------------------------------------------------------------
+  src/tools/ATMET.AI.WorkflowSpike/README.md
 
-// dotnet add package Azure.AI.Projects --version 2.0.0-beta.1
-using Azure.AI.Projects;
-using Azure.AI.Projects.OpenAI;
-using Azure.Identity;
-using OpenAI;
-using OpenAI.Responses;
+Minimal pattern (C#):
 
-#pragma warning disable OPENAI001
+  using Azure.AI.Extensions.OpenAI;
+  using Azure.AI.Projects;
+  using Azure.Identity;
 
-const string projectEndpoint = "https://wf-atmet-resource.services.ai.azure.com/api/projects/wf-atmet";
-const string agentName = "tax-wf";
-const string agentVersion = "7";
-const string userMessage = "Hi tax-wf";
+  var projectClient = new AIProjectClient(new Uri(endpoint), new DefaultAzureCredential());
+  var openAi = projectClient.ProjectOpenAIClient;
+  var conversation = (await openAi.GetProjectConversationsClient()
+      .CreateProjectConversationAsync()).Value;
+  var agentReference = new AgentReference(agentName, agentVersion);
+  var responseClient = openAi.GetProjectResponsesClientForAgent(agentReference, conversation);
+  var r1 = (await responseClient.CreateResponseAsync(userMessage)).Value;
+  // Resume / next turn: chain with previous_response_id (SDK overload or CreateResponseOptions).
+  var r2 = (await responseClient.CreateResponseAsync("Follow-up", previousResponseId: r1.Id)).Value;
+  var text = r2.GetOutputText();
 
-// Connect to your project using the endpoint from your project page
-AIProjectClient projectClient = new(endpoint: new Uri(projectEndpoint), tokenProvider: new DefaultAzureCredential());
+Packages (match ATMET.AI.Api):
+  Azure.AI.Projects 2.0.0
+  Azure.AI.Extensions.OpenAI 2.0.0
+  Azure.Identity
 
-ProjectConversation conversation = projectClient.OpenAI.Conversations.CreateProjectConversation();
-AgentReference agentReference = new AgentReference(name: agentName, version: agentVersion);
-ProjectResponsesClient responseClient = projectClient.OpenAI.GetProjectResponsesClientForAgent(agentReference, conversation.Id);
+Align with the API host configuration (appsettings.json section "AzureAI"):
+  ProjectEndpoint, WorkflowAgentName, WorkflowAgentVersion
+  On Azure App Service / containers use the same flattened env vars as ASP.NET Core:
+  AzureAI__ProjectEndpoint, AzureAI__WorkflowAgentName, AzureAI__WorkflowAgentVersion
 
-ResponseResult response = responseClient.CreateResponse(userMessage);
-Console.WriteLine(response.GetOutputText());
+The WorkflowSpike tool loads those files/variables automatically; see src/tools/ATMET.AI.WorkflowSpike/README.md.

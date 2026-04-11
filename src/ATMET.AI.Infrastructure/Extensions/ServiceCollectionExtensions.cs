@@ -65,6 +65,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPortalFormService, Services.Portal.PortalFormService>();
         services.AddScoped<IPortalWorkflowService, Services.Portal.PortalWorkflowService>();
         services.AddScoped<IPortalActivityService, Services.Portal.PortalActivityService>();
+        services.AddScoped<IFoundryAgentReadService, Services.Foundry.FoundryAgentReadService>();
+        services.AddScoped<IPortalAiWorkflowService, Services.PortalAiWorkflow.PortalAiWorkflowService>();
 
         // Portal AI agent service (orchestrates chat → tool calls → portal services)
         services.AddScoped<IPortalAgentService, Services.Portal.PortalAgentService>();

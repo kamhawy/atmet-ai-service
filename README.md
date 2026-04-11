@@ -1,9 +1,10 @@
 # ATMET AI Service
 
-A comprehensive .NET 10 Web API that encapsulates Azure AI Foundry SDK capabilities, providing unified REST endpoints for frontend SPA applications. This service replaces direct Azure AI Foundry SDK usage in client applications (e.g., the **atmetai-sigmapaints-demo** React SPA), enabling centralized configuration, managed identity authentication to Azure, and consistent API contracts.
+A comprehensive .NET 10 Web API that encapsulates Azure AI Foundry SDK capabilities, providing unified REST endpoints for frontend SPA applications. It centralizes Azure AI access and also hosts the **MUBASHIR portal AI BFF** (SSE chat, Supabase-backed conversation state, Foundry **Project Responses** workflow via **`IPortalAiWorkflowService`**).
 
 ## 🚀 Features
 
+- **Portal AI chat (MUBASHIR)**: `POST /api/v1/portal/conversations/{id}/chat` — SSE; **`IPortalAiWorkflowService`** / Foundry workflow; internal **`/api/v1/internal/foundry/*`** reads for agent HTTP tools ([`docs/foundry-tax-assistant/`](docs/foundry-tax-assistant/README.md))
 - **Agents Management**: Create, manage, and execute AI agents with full conversation support (threads, messages, runs, file uploads)
 - **Deployments**: Enumerate and manage AI model deployments (GPT-4, GPT-4o, etc.)
 - **Connections**: List and inspect Azure resource connections (OpenAI, AI Search, storage)
@@ -13,7 +14,7 @@ A comprehensive .NET 10 Web API that encapsulates Azure AI Foundry SDK capabilit
 - **Managed Identity**: Secure, keyless authentication to Azure services
 - **API Key Auth**: Simple `X-Api-Key` header authentication for SPA clients
 - **Health Checks**: Comprehensive health monitoring (`/health`, `/health/ready`, `/health/live`)
-- **Observability**: Application Insights integration with structured logging
+- **Observability**: OpenTelemetry + Application Insights (`ObservabilityExtensions`, configurable sampling and dependency tracking; see [`docs/foundry-tax-assistant/DASHBOARDS-AND-KQL.md`](docs/foundry-tax-assistant/DASHBOARDS-AND-KQL.md))
 - **Performance**: Output caching, response compression, and connection pooling
 - **Security**: API key authentication, CORS, rate limiting, security headers
 
@@ -316,12 +317,17 @@ Add the SPA origin to `Cors.AllowedOrigins` in `appsettings.json`.
 
 ## 🧪 Testing
 
-```bash
-# Run unit tests
-dotnet test
+**`ATMET.AI.Api.Tests`** — tenant header validation; integration tests for internal Foundry routes (`WebApplicationFactory` + fake `IFoundryAgentReadService`; host loads **`appsettings.Integration.json`** so the test API key matches configuration). **`ATMET.AI.Core.Tests`** — `WorkflowPauseEnvelopeParser` unit tests. From `atmet-ai-service/`:
 
-# Run integration tests (requires Azure setup)
-dotnet test --filter Category=Integration
+```bash
+# Run all tests in the solution (CI uses this in Release)
+dotnet test ATMET.AI.Service.sln -c Release
+
+# Run only API tests
+dotnet test src/ATMET.AI.Api.Tests/ATMET.AI.Api.Tests.csproj
+
+# Run only integration tests (no Supabase; in-memory host)
+dotnet test src/ATMET.AI.Api.Tests/ATMET.AI.Api.Tests.csproj --filter Category=Integration
 
 # Run with coverage
 dotnet test /p:CollectCoverage=true
@@ -397,10 +403,13 @@ For issues and questions:
 - [ ] WebSocket support for real-time streaming
 - [ ] Multi-tenancy / per-entity configuration
 - [ ] Custom tool integrations
-- [ ] OpenTelemetry integration
+- [x] OpenTelemetry + Azure Monitor export for portal AI workflow (`ObservabilityExtensions`, `docs/foundry-tax-assistant/DASHBOARDS-AND-KQL.md`)
 
 ## 📚 Additional Resources
 
+- **[`CLAUDE.md`](../CLAUDE.md)** (workspace root) — end-to-end platform guide: portal AI, Foundry flags, postponed Supabase CRUD program, env vars
+- [ATMET AI Assistant (Foundry) docs](docs/foundry-tax-assistant/README.md) — roadmap, operations, staging checklist, technical reference
+- [Deployment & Azure App Service settings](docs/DEPLOYMENT.md)
 - [Azure AI Foundry Documentation](https://learn.microsoft.com/azure/ai-studio/)
 - [Azure AI Projects SDK](https://learn.microsoft.com/dotnet/api/overview/azure/ai.projects-readme)
 - [Azure OpenAI Service](https://learn.microsoft.com/azure/ai-services/openai/)

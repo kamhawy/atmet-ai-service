@@ -3,7 +3,6 @@ using ATMET.AI.Api.OpenApi;
 using ATMET.AI.Infrastructure.Configuration;
 using ATMET.AI.Infrastructure.Extensions;
 using FluentValidation;
-using Microsoft.ApplicationInsights.AspNetCore.Extensions;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi;
@@ -41,14 +40,7 @@ public static class ServiceCollectionExtensions
         services.AddApiSwagger();
         services.AddApiJsonOptions();
         services.AddProblemDetails();
-        services.AddApplicationInsightsTelemetry(options =>
-        {
-            options.ConnectionString = configuration["ApplicationInsights:ConnectionString"];
-            options.EnableDependencyTrackingTelemetryModule =
-                configuration.GetValue("ApplicationInsights:EnableDependencyTracking", true);
-            options.EnablePerformanceCounterCollectionModule =
-                configuration.GetValue("ApplicationInsights:EnablePerformanceCounterCollectionModule", true);
-        });
+        services.AddApiAzureMonitorObservability(configuration);
         services.AddValidatorsFromAssemblyContaining<AzureAIOptions>();
 
         return services;

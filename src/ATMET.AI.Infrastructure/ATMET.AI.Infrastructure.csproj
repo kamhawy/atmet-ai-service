@@ -5,9 +5,11 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>ATMET.AI.Infrastructure</RootNamespace>
+    <NoWarn>$(NoWarn);OPENAI001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.AI.Extensions.OpenAI" Version="2.0.0" />
     <PackageReference Include="Azure.AI.Projects" Version="2.0.0" />
     <PackageReference Include="Azure.AI.Agents.Persistent" Version="1.2.0-beta.10" />
     <PackageReference Include="Azure.AI.OpenAI" Version="2.9.0-beta.1" />

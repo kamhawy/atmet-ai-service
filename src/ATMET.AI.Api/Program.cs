@@ -24,3 +24,6 @@ finally
 {
     await Log.CloseAndFlushAsync();
 }
+
+/// <summary>Exposes the assembly entry type to ASP.NET Core integration tests (WebApplicationFactory).</summary>
+public partial class Program;

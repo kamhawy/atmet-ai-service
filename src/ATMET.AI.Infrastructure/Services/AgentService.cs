@@ -19,18 +19,15 @@ public class AgentService : IAgentService
     private readonly AzureAIClientFactory _clientFactory;
     private readonly ILogger<AgentService> _logger;
     private readonly PersistentAgentsClient _agentsClient;
-    private readonly IPortalAgentService _portalAgentService;
     private readonly AzureAIOptions _aiOptions;
 
     public AgentService(
         AzureAIClientFactory clientFactory,
-        IPortalAgentService portalAgentService,
         IOptions<AzureAIOptions> aiOptions,
         ILogger<AgentService> logger)
     {
         _clientFactory = clientFactory ?? throw new ArgumentNullException(nameof(clientFactory));
         _agentsClient = _clientFactory.GetAgentsClient();
-        _portalAgentService = portalAgentService ?? throw new ArgumentNullException(nameof(portalAgentService));
         _aiOptions = aiOptions.Value;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }

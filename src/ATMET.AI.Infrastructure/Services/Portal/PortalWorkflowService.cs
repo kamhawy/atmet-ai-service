@@ -27,6 +27,26 @@ public class PortalWorkflowService : IPortalWorkflowService
         if (caseRow.GetProperty("requester_user_id").GetString() != userId)
             return null;
 
+        return await BuildWorkflowStateAsync(caseId, caseRow, ct);
+    }
+
+    public async Task<WorkflowStateResponse?> GetWorkflowStateForEntityAsync(string caseId, string entityId,
+        CancellationToken ct = default)
+    {
+        var caseRow = await _db.GetByIdAsync<JsonElement>("cases", caseId,
+            select: "id,entity_id,workflow_version_id,current_step",
+            cancellationToken: ct);
+        if (caseRow.ValueKind == JsonValueKind.Undefined) return null;
+
+        if (caseRow.GetProperty("entity_id").GetString() != entityId)
+            return null;
+
+        return await BuildWorkflowStateAsync(caseId, caseRow, ct);
+    }
+
+    private async Task<WorkflowStateResponse?> BuildWorkflowStateAsync(string caseId, JsonElement caseRow,
+        CancellationToken ct)
+    {
         var workflowVersionId = caseRow.GetProp("workflow_version_id");
         if (workflowVersionId == null) return null;
 
@@ -43,7 +63,6 @@ public class PortalWorkflowService : IPortalWorkflowService
         if (stages.Count == 0) return null;
 
         var currentStepId = caseRow.GetProp("current_step");
-        var currentStep = currentStepId != null ? GetStepInfo(stages, currentStepId) : null;
 
         // Get execution log to determine completed steps
         var execLogs = await _db.GetAsync<JsonElement>("workflow_execution_log",

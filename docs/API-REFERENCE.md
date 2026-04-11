@@ -2,6 +2,8 @@
 
 Complete API documentation for all endpoints in the ATMET AI Service.
 
+> **Note (April 2026):** Some sections below still mention Azure AD Bearer tokens. The **SPA + MUBASHIR** integration today uses **`X-Api-Key`** (and portal headers such as **`X-Portal-User-Id`**, **`X-Portal-Entity-Id`**) as documented in [`DEPLOYMENT.md`](./DEPLOYMENT.md) and [`foundry-tax-assistant/TECHNICAL-REFERENCE.md`](./foundry-tax-assistant/TECHNICAL-REFERENCE.md). **Citizen portal chat:** `POST /api/v1/portal/conversations/{conversationId}/chat` (SSE). Workspace overview: [`CLAUDE.md`](../../CLAUDE.md).
+
 ## Base URL
 
 ```

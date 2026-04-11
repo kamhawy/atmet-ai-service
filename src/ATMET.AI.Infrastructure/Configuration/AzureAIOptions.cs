@@ -24,7 +24,7 @@ namespace ATMET.AI.Infrastructure.Configuration
         public string PortalAgentId { get; set; } = "asst_RwQkCaZPXdtFCVzZTPUEVjSm";
 
         /// <summary>
-        /// Display name of the portal agent in Foundry (e.g. tax-agent). Used for list lookup when resolving by name.
+        /// Display name of the portal agent in Foundry (set per environment). Used for list lookup when resolving by name.
         /// </summary>
         public string PortalAgentName { get; set; } = "atmet-portal-assistant";
 
@@ -36,5 +36,16 @@ namespace ATMET.AI.Infrastructure.Configuration
 
         public int RequestTimeoutSeconds { get; set; } = 120;
         public int MaxRetryAttempts { get; set; } = 3;
+
+        /// <summary>
+        /// Foundry **workflow** agent name for Project Responses / <c>AgentReference</c> (set per environment; must match Foundry).
+        /// </summary>
+        public string WorkflowAgentName { get; set; } = "atmet-workflow-agent";
+
+        /// <summary>
+        /// Foundry workflow agent **version** string for <c>AgentReference</c> (set per environment).
+        /// </summary>
+        public string WorkflowAgentVersion { get; set; } = "1";
+
     }
 }

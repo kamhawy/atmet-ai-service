@@ -185,17 +185,11 @@ Azure AI       → Foundry Project (Managed Identity)
    - Add actual Azure AI SDK calls
    - Implement error handling and validation
 
-2. **Add Unit Tests**
-   - Create tests in `tests/ATMET.AI.Core.Tests/`
-   - Mock Azure AI clients
-   - Test business logic
+2. **Add more tests**
+   - Core/Infrastructure unit tests can live under `src/` as additional `*.Tests` projects (optional).
+   - API tests today: `src/ATMET.AI.Api.Tests` (xUnit + `WebApplicationFactory<Program>` for internal Foundry routes with a fake `IFoundryAgentReadService`).
 
-3. **Add Integration Tests**
-   - Create tests in `tests/ATMET.AI.Api.Tests/`
-   - Test endpoints with TestServer
-   - Verify Azure integration
-
-4. **Customize for Your Needs**
+3. **Customize for Your Needs**
    - Add additional endpoints
    - Extend models and DTOs
    - Configure caching policies

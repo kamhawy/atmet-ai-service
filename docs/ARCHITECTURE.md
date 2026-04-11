@@ -4,6 +4,14 @@
 
 A comprehensive .NET 10 Web API that encapsulates Azure AI Foundry SDK capabilities, providing unified endpoints for frontend SPA applications.
 
+## Related: ATMET AI Assistant (Foundry workflow)
+
+Wave roadmap, internal tool reads, and orchestration notes live under **[foundry-tax-assistant/README.md](foundry-tax-assistant/README.md)** (folder name is legacy; content is the generic portal AI assistant). **Workspace guide:** [`CLAUDE.md`](../../CLAUDE.md) at the repository root.
+
+## Portal BFF & Supabase (current)
+
+The API is **not** limited to Azure AI proxies: **`SupabaseRestClient`** (Infrastructure) calls PostgREST with the service role for portal domains (catalog, cases, conversations, documents, forms, workflows). **Citizen chat** is **`POST /api/v1/portal/conversations/{id}/chat`** (SSE), implemented in **`PortalAgentService`**, which always delegates turns to **`IPortalAiWorkflowService`** / Foundry Project Responses. Full generic CRUD for every table remains a **postponed** platform track — see [`BACKEND_API_PROMPT.md`](../../../atmet-ai-web/docs/archive/BACKEND_API_PROMPT.md).
+
 ## Technology Stack
 
 - **.NET 10** (Latest features)
@@ -63,8 +71,8 @@ A comprehensive .NET 10 Web API that encapsulates Azure AI Foundry SDK capabilit
 
 ```
 ┌─────────────────────────────────────────┐
-│         API Layer (Controllers)         │
-│  Minimal APIs / Route Handlers          │
+│         API Layer (Minimal APIs)        │
+│  Route groups / Endpoints                 │
 └─────────────────────────────────────────┘
                     │
 ┌─────────────────────────────────────────┐
@@ -123,18 +131,15 @@ ATMET.AI.Service/
 │   │   │   └── Responses/
 │   │   └── Exceptions/
 │   │
-│   └── ATMET.AI.Infrastructure/         # Infrastructure Layer
-│       ├── Clients/
-│       │   └── AzureAIClientFactory.cs
-│       ├── Configuration/
-│       │   └── AzureAIOptions.cs
-│       └── Extensions/
-│           └── AzureAIExtensions.cs
-│
-├── tests/
-│   ├── ATMET.AI.Api.Tests/
-│   ├── ATMET.AI.Core.Tests/
-│   └── ATMET.AI.Infrastructure.Tests/
+│   ├── ATMET.AI.Infrastructure/         # Infrastructure Layer
+│   │   ├── Clients/
+│   │   │   └── AzureAIClientFactory.cs
+│   │   ├── Configuration/
+│   │   │   └── AzureAIOptions.cs
+│   │   └── Extensions/
+│   │       └── AzureAIExtensions.cs
+│   │
+│   └── ATMET.AI.Api.Tests/                # xUnit: unit + WebApplicationFactory integration tests
 │
 └── docs/
     ├── API.md

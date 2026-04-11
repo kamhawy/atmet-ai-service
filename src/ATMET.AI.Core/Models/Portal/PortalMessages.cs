@@ -54,6 +54,11 @@ public static class PortalMessageTypes
     public const string FormSubmit = "form_submit";
     public const string ConfirmAutofill = "confirm_autofill";
     public const string DocumentAttached = "document_attached";
+
+    /// <summary>
+    /// HITL resume after a Foundry pause: requires <see cref="PortalAiWorkflowResumeData"/> in <see cref="PortalChatMessage.Data"/>.
+    /// </summary>
+    public const string WorkflowResume = "workflow_resume";
 }
 
 /// <summary>
@@ -184,3 +189,10 @@ public record DocumentAttachedData(
     string? DocumentCatalogId,
     string FileName
 );
+
+/// <summary>
+/// User → agent: resume a paused Foundry workflow turn (<c>previous_response_id</c> + optional structured payload).
+/// </summary>
+public record PortalAiWorkflowResumeData(
+    string PreviousResponseId,
+    JsonElement? ResumePayload = null);

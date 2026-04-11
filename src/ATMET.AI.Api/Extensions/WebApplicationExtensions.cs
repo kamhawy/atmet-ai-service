@@ -141,6 +141,7 @@ public static class WebApplicationExtensions
         PortalActivityEndpoints.MapEndpoints(apiGroup);
         PortalChatEndpoints.MapEndpoints(apiGroup);
         PortalSpeechEndpoints.MapEndpoints(apiGroup);
+        InternalFoundryAgentEndpoints.MapEndpoints(apiGroup);
 
         app.MapGet("/", () => Results.Ok(new
         {
