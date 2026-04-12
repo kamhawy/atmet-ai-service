@@ -303,6 +303,8 @@ FodyWeavers.xsd
 appsettings.Development.json
 appsettings.*.json
 !appsettings.json
+# CI / integration tests: non-secret test API key only (see Api.Tests README if added)
+!src/ATMET.AI.Api.Tests/appsettings.Integration.json
 
 # Secrets
 secrets.json

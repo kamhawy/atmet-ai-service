@@ -24,9 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="appsettings.Integration.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <None Include="appsettings.Integration.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
